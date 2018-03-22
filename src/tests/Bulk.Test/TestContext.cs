@@ -15,5 +15,10 @@ namespace Bulk.Test
         }
 
         public DbSet<SimpleTableWithIdentity> SimpleTableWithIdentity { get; set; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+        }
     }
 }

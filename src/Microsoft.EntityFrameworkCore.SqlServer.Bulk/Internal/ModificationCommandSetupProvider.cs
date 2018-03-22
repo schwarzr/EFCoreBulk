@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
@@ -15,6 +16,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
             foreach (var command in commands)
             {
+                if (TableName == null)
+                {
+                    TableName = command.TableName;
+                    SchemaName = command.Schema;
+                }
+
                 foreach (var modification in command.ColumnModifications)
                 {
                     var name = modification.ColumnName;
@@ -35,9 +42,18 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             _columns = columns.Values.ToImmutableList();
         }
 
+        public string SchemaName { get; }
+
+        public string TableName { get; }
+
         public IEnumerable<IColumnSetup> Build()
         {
             return _columns;
+        }
+
+        public void PropagateValues(object entity, IDictionary<IColumnSetup, object> values)
+        {
+            ((ModificationCommand)entity).PropagateResults(new Storage.ValueBuffer(values.OrderBy(p => p.Key.Ordinal).Select(p => p.Value).ToArray()));
         }
 
         private static object GetColumnValue(object parma, string name)

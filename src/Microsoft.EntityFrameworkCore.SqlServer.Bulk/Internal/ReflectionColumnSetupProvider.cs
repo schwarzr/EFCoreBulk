@@ -15,6 +15,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             _entityType = entityType;
         }
 
+        public string SchemaName => null;
+
+        public string TableName => _entityType.Name;
+
         public IEnumerable<IColumnSetup> Build()
         {
             int run = 0;
@@ -28,6 +32,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
                 yield return new DelegateColumnSetup(run, item.Name, item.PropertyType, lambdaGet.Compile(), lambdaSet.Compile());
                 run++;
+            }
+        }
+
+        public void PropagateValues(object entity, IDictionary<IColumnSetup, object> values)
+        {
+            foreach (var item in values)
+            {
+                item.Key.SetValue(entity, item.Value);
             }
         }
     }

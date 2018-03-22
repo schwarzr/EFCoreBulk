@@ -37,7 +37,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public void SetValue(object parameter, object value)
         {
-            throw new NotImplementedException();
+            _setValue(parameter, value);
         }
     }
 }

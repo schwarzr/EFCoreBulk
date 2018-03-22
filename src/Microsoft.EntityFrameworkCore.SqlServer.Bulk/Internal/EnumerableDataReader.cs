@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Linq;
 
@@ -11,23 +12,25 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         private readonly Dictionary<int, IColumnSetup> _columnMappings;
         private readonly Dictionary<string, int> _columnNameMappings;
         private readonly IEnumerable<TItem> _items;
-
+        private readonly IList<TItem> _trackedItems;
+        private readonly bool _trackItems;
         private IEnumerator<TItem> _enumerator;
-
         private object _enumeratorLocker = new object();
-
         private bool _isClosed = false;
 
-        public EnumerableDataReader(IEnumerable<TItem> items, IColumnSetupProvider columnSetupProvider = null)
+        public EnumerableDataReader(IEnumerable<TItem> items, IEnumerable<IColumnSetup> columns = null, bool trackItems = false)
         {
+            _trackItems = trackItems;
             _items = items;
+            _trackedItems = new List<TItem>();
+            TrackedItems = new ReadOnlyCollection<TItem>(this._trackedItems);
 
-            if (columnSetupProvider == null)
+            if (columns == null)
             {
-                columnSetupProvider = new ReflectionColumnSetupProvider(typeof(TItem));
+                columns = new ReflectionColumnSetupProvider(typeof(TItem)).Build().Where(p => p.ValueDirection.HasFlag(ValueDirection.Write)).ToList();
             }
 
-            _columnMappings = columnSetupProvider.Build().Where(p => p.ValueDirection.HasFlag(ValueDirection.Write)).ToDictionary(p => p.Ordinal, p => p);
+            _columnMappings = columns.ToDictionary(p => p.Ordinal, p => p);
             _columnNameMappings = _columnMappings.Values.ToDictionary(p => p.ColumnName, p => p.Ordinal);
         }
 
@@ -40,6 +43,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         public override bool IsClosed => _isClosed;
 
         public override int RecordsAffected => throw new NotImplementedException();
+
+        public ReadOnlyCollection<TItem> TrackedItems { get; }
 
         public override object this[int ordinal] => GetValue(ordinal);
 
@@ -183,7 +188,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 }
             }
 
-            return _enumerator?.MoveNext() ?? false;
+            var result = _enumerator?.MoveNext() ?? false;
+            if (_trackItems && result)
+            {
+                _trackedItems.Add(_enumerator.Current);
+            }
+
+            return result;
         }
 
         protected override void Dispose(bool disposing)
