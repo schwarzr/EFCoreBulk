@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System;
 
 namespace Bulk.Test.Migrations
@@ -19,6 +20,23 @@ namespace Bulk.Test.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+            modelBuilder.Entity("Bulk.Test.Model.BaseTphTable", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(50);
+
+                    b.Property<byte>("Type");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaseTphTable");
+
+                    b.HasDiscriminator<byte>("Type");
+                });
 
             modelBuilder.Entity("Bulk.Test.Model.SimpleTableWithIdentity", b =>
                 {
@@ -36,6 +54,28 @@ namespace Bulk.Test.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SimpleTableWithIdentity");
+                });
+
+            modelBuilder.Entity("Bulk.Test.Model.TpHChildTableOne", b =>
+                {
+                    b.HasBaseType("Bulk.Test.Model.BaseTphTable");
+
+                    b.Property<int>("ChildOneProperty");
+
+                    b.ToTable("TpHChildTableOne");
+
+                    b.HasDiscriminator().HasValue((byte)1);
+                });
+
+            modelBuilder.Entity("Bulk.Test.Model.TpHChildTableTwo", b =>
+                {
+                    b.HasBaseType("Bulk.Test.Model.BaseTphTable");
+
+                    b.Property<int>("ChildTwoProperty");
+
+                    b.ToTable("TpHChildTableTwo");
+
+                    b.HasDiscriminator().HasValue((byte)2);
                 });
 #pragma warning restore 612, 618
         }

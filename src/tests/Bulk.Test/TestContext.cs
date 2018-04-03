@@ -14,11 +14,23 @@ namespace Bulk.Test
         {
         }
 
+        public DbSet<BaseTphTable> BaseTphTable { get; set; }
+
         public DbSet<SimpleTableWithIdentity> SimpleTableWithIdentity { get; set; }
 
         public override void Dispose()
         {
             base.Dispose();
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<BaseTphTable>()
+                .HasDiscriminator<byte>("Type")
+                    .HasValue<TpHChildTableOne>(1)
+                    .HasValue<TpHChildTableTwo>(2);
         }
     }
 }
