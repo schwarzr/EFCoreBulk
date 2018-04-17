@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -12,7 +13,7 @@ namespace Microsoft.EntityFrameworkCore
 {
     public static class EntityFrameworkCoreSqlServerBulkDbContextExtensions
     {
-        public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, bool propatateValues = true, CancellationToken token = default(CancellationToken))
+        public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, bool propatateValues = true, CancellationToken token = default(CancellationToken), IShadowPropertyAccessor shadowPropertyAccessor = null)
         {
             var sp = ((IInfrastructure<IServiceProvider>)context);
             var options = sp.GetService<IDbContextOptions>();
@@ -26,7 +27,7 @@ namespace Microsoft.EntityFrameworkCore
             using (var relationalConnection = sp.GetService<IRelationalConnection>())
             using (var transaction = await relationalConnection.BeginTransactionAsync(token))
             {
-                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, propatateValues, EntityState.Added));
+                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, propatateValues, EntityState.Added, shadowPropertyAccessor));
                 await insertProcessor.ProcessAsync(relationalConnection, items, token);
                 transaction.Commit();
             }

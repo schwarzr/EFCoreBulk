@@ -8,9 +8,10 @@ using Bulk.Test;
 namespace Bulk.Test.Core1.Migrations
 {
     [DbContext(typeof(TestContext))]
-    partial class TestContextModelSnapshot : ModelSnapshot
+    [Migration("20180417141015_AddShadowPropertyEntity")]
+    partial class AddShadowPropertyEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.5")

@@ -55,6 +55,54 @@ namespace Bulk.Test
         }
 
         [Fact]
+        public async Task BulkInsertShadowPropertyEntityIgnoreShadowPropertyAsync()
+        {
+            var prov = GetServiceProvider();
+            var ctx = prov.GetService<TestContext>();
+
+            var items = Enumerable.Range(1, 100)
+                .Select(p =>
+                {
+                    var result = new SimpleTableWithShadowProperty
+                    {
+                        Title = $"Title {p}"
+                    };
+                    result.StoreValue("Description_de", $"Description Value {0}");
+                    return result;
+                })
+                .ToList();
+
+            await ctx.BulkInsertAsync(items);
+
+            var allItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
+            Assert.All(allItems, p => Assert.Equal("DEFAULT", ctx.Entry(p).Property("Description_de").CurrentValue));
+        }
+
+        [Fact]
+        public async Task BulkInsertShadowPropertyEntityIncludeShadowPropertyAsync()
+        {
+            var prov = GetServiceProvider();
+            var ctx = prov.GetService<TestContext>();
+
+            var items = Enumerable.Range(1, 100)
+                .Select(p =>
+                {
+                    var result = new SimpleTableWithShadowProperty
+                    {
+                        Title = $"Title {p}"
+                    };
+                    result.StoreValue("Description_de", $"Description Value {0}");
+                    return result;
+                })
+                .ToList();
+
+            await ctx.BulkInsertAsync(items, shadowPropertyAccessor: ShadowPropertyAccessor.Current);
+
+            var allItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
+            Assert.All(allItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
+        }
+
+        [Fact]
         public async Task BulkInsertTpHEntitiesAsync()
         {
             var itemsOne = Enumerable.Range(0, 200).Select(p => new TpHChildTableOne

@@ -56,6 +56,28 @@ namespace Bulk.Test.Migrations
                     b.ToTable("SimpleTableWithIdentity");
                 });
 
+            modelBuilder.Entity("Bulk.Test.Model.SimpleTableWithShadowProperty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Description_de")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasDefaultValue("DEFAULT")
+                        .HasMaxLength(200);
+
+                    b.Property<string>("Description_en")
+                        .HasMaxLength(200);
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(100);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SimpleTableWithShadowProperty");
+                });
+
             modelBuilder.Entity("Bulk.Test.Model.TpHChildTableOne", b =>
                 {
                     b.HasBaseType("Bulk.Test.Model.BaseTphTable");

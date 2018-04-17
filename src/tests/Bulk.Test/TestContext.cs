@@ -18,6 +18,8 @@ namespace Bulk.Test
 
         public DbSet<SimpleTableWithIdentity> SimpleTableWithIdentity { get; set; }
 
+        public DbSet<SimpleTableWithShadowProperty> SimpleTableWithShadowProperty { get; set; }
+
         public override void Dispose()
         {
             base.Dispose();
@@ -31,6 +33,10 @@ namespace Bulk.Test
                 .HasDiscriminator<byte>("Type")
                     .HasValue<TpHChildTableOne>(1)
                     .HasValue<TpHChildTableTwo>(2);
+
+            var entity = modelBuilder.Entity<SimpleTableWithShadowProperty>();
+            entity.Property<string>("Description_de").HasMaxLength(200).HasDefaultValue("DEFAULT").ValueGeneratedNever().IsRequired();
+            entity.Property<string>("Description_en").HasMaxLength(200);
         }
     }
 }

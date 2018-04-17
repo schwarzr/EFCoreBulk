@@ -9,9 +9,12 @@
   <ItemGroup>
     <Compile Include="..\Bulk.Test\DatabaseTest.cs" Link="DatabaseTest.cs" />
     <Compile Include="..\Bulk.Test\Model\BaseTphTable.cs" Link="Model\BaseTphTable.cs" />
+    <Compile Include="..\Bulk.Test\Model\IShadowPropertyEntity.cs" Link="Model\IShadowPropertyEntity.cs" />
     <Compile Include="..\Bulk.Test\Model\SimpleTableWithIdentity.cs" Link="Model\SimpleTableWithIdentity.cs" />
+    <Compile Include="..\Bulk.Test\Model\SimpleTableWithShadowProperty.cs" Link="Model\SimpleTableWithShadowProperty.cs" />
     <Compile Include="..\Bulk.Test\Model\TpHChildTableOne.cs" Link="Model\TpHChildTableOne.cs" />
     <Compile Include="..\Bulk.Test\Model\TpHChildTableTwo.cs" Link="Model\TpHChildTableTwo.cs" />
+    <Compile Include="..\Bulk.Test\ShadowPropertyAccessor.cs" Link="ShadowPropertyAccessor.cs" />
     <Compile Include="..\Bulk.Test\TestContext.cs" Link="TestContext.cs" />
     <Compile Include="..\Bulk.Test\BulkInsertOperationsTest.cs" Link="BulkInsertOperationsTest.cs" />
   </ItemGroup>
