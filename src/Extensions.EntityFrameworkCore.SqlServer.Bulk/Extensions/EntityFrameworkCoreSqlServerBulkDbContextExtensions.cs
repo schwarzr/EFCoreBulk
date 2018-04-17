@@ -25,11 +25,20 @@ namespace Microsoft.EntityFrameworkCore
             }
 
             using (var relationalConnection = sp.GetService<IRelationalConnection>())
-            using (var transaction = await relationalConnection.BeginTransactionAsync(token))
             {
-                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, propatateValues, EntityState.Added, shadowPropertyAccessor));
-                await insertProcessor.ProcessAsync(relationalConnection, items, token);
-                transaction.Commit();
+                IDbContextTransaction target = null;
+
+                if (relationalConnection.CurrentTransaction == null)
+                {
+                    target = await relationalConnection.BeginTransactionAsync(token);
+                }
+
+                using (var transaction = target.NullDisposable())
+                {
+                    var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, propatateValues, EntityState.Added, shadowPropertyAccessor));
+                    await insertProcessor.ProcessAsync(relationalConnection, items, token);
+                    transaction.Target?.Commit();
+                }
             }
         }
     }
