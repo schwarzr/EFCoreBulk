@@ -37,7 +37,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 properties = properties.Where(p => !p.IsStoreGeneratedAlways);
                 if (state == EntityState.Added)
                 {
-                    properties = properties.Where(p => p.ValueGenerated.HasFlag(ValueGenerated.OnAdd));
+                    properties = properties.Where(p => !p.ValueGenerated.HasFlag(ValueGenerated.OnAdd));
                 }
             }
 
