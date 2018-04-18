@@ -180,6 +180,43 @@ namespace Bulk.Test
         }
 
         [Fact]
+        public async Task BulkInsertWithSurroundingTransactionAsync()
+        {
+            var prov = GetServiceProvider();
+            var ctx = prov.GetService<TestContext>();
+
+            var items = new[] {
+                new SimpleTableWithIdentity { Title = "Bla1" },
+                new SimpleTableWithIdentity { Title = "Bla2" },
+                new SimpleTableWithIdentity { Title = "Bla3" }
+            };
+
+            var items2 = new[] {
+                new SimpleTableWithIdentity { Title = "Bla4" },
+                new SimpleTableWithIdentity { Title = "Bla5" },
+                new SimpleTableWithIdentity { Title = "Bla6" }
+            };
+
+            using (var transaction = await ctx.Database.BeginTransactionAsync())
+            {
+                await ctx.BulkInsertAsync(items, false);
+                await ctx.BulkInsertAsync(items2, false);
+
+                transaction.Commit();
+            }
+
+            var result = ctx.SimpleTableWithIdentity.ToList();
+
+            Assert.Equal(6, result.Count);
+            Assert.Contains(result, p => p.Title.Equals("Bla1"));
+            Assert.Contains(result, p => p.Title.Equals("Bla2"));
+            Assert.Contains(result, p => p.Title.Equals("Bla3"));
+            Assert.Contains(result, p => p.Title.Equals("Bla4"));
+            Assert.Contains(result, p => p.Title.Equals("Bla5"));
+            Assert.Contains(result, p => p.Title.Equals("Bla6"));
+        }
+
+        [Fact]
         public async Task SimpleInsertAsync()
         {
             var prov = GetServiceProvider();

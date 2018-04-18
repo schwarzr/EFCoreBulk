@@ -53,6 +53,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         protected override SqlBulkCopy CreateBulkCopy(IRelationalConnection connection)
         {
             var bulk = new SqlBulkCopy((SqlConnection)connection.DbConnection, SqlBulkCopyOptions.CheckConstraints | SqlBulkCopyOptions.FireTriggers, (SqlTransaction)connection.CurrentTransaction.GetDbTransaction());
+            bulk.BulkCopyTimeout = connection.CommandTimeout ?? 60;
             bulk.DestinationTableName = bulkTable;
             InboundColumns.ForEach(p => bulk.ColumnMappings.Add(p.ColumnName, p.ColumnName));
 
