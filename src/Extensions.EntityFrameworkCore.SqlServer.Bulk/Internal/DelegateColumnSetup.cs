@@ -22,10 +22,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public Type ColumnType { get; }
 
-        public bool IsRead => throw new NotImplementedException();
-
-        public bool IsWrite => throw new NotImplementedException();
-
         public int Ordinal { get; }
 
         public ValueDirection ValueDirection { get; }

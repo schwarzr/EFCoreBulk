@@ -35,7 +35,7 @@ namespace Bulk.Test
                     .HasValue<TpHChildTableTwo>(2);
 
             var entity = modelBuilder.Entity<SimpleTableWithShadowProperty>();
-            entity.Property<string>("Description_de").HasMaxLength(200).HasDefaultValue("DEFAULT").ValueGeneratedNever().IsRequired();
+            var prop = entity.Property<string>("Description_de").HasMaxLength(200).HasDefaultValue("DEFAULT").IsRequired();
             entity.Property<string>("Description_en").HasMaxLength(200);
         }
     }

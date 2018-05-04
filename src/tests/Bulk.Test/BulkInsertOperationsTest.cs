@@ -14,6 +14,37 @@ namespace Bulk.Test
     public class BulkInsertOperationsTest : DatabaseTest
     {
         [Fact]
+        public async Task BulkInsertDefaultValuesForPropertiesAsync()
+        {
+            var prov = GetServiceProvider();
+            var ctx = prov.GetService<TestContext>();
+
+            var items = Enumerable.Range(1, 100)
+                .Select(p =>
+                {
+                    var result = new SimpleTableWithShadowProperty
+                    {
+                        Title = $"Title {p}"
+                    };
+                    if (p % 2 == 0)
+                    {
+                        result.StoreValue("Description_de", $"Description Value {0}");
+                    }
+                    return result;
+                })
+                .ToList();
+
+            await ctx.BulkInsertAsync(items, shadowPropertyAccessor: ShadowPropertyAccessor.Current);
+
+            var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") == "Default").ToListAsync();
+            var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") != "Default").ToListAsync();
+            Assert.Equal(50, defaultItems.Count);
+            Assert.Equal(50, otherItems.Count);
+
+            Assert.All(otherItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
+        }
+
+        [Fact]
         public async Task BulkInsertNormalUpdateAsync()
         {
             var prov = GetServiceProvider();

@@ -4,6 +4,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
@@ -32,21 +34,19 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 properties = properties.Where(p => p.IsPrimaryKey());
             }
 
-            if (!propagateValues)
-            {
-                properties = properties.Where(p => !p.IsStoreGeneratedAlways);
-                if (state == EntityState.Added)
-                {
-                    properties = properties.Where(p => !p.ValueGenerated.HasFlag(ValueGenerated.OnAdd));
-                }
-            }
-
             if (shadowPropertyAccessor == null)
             {
                 properties = properties.Where(p => entity.Relational().DiscriminatorProperty == p || !p.IsShadowProperty);
             }
 
-            _columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, propagateValues, state, shadowPropertyAccessor)).ToImmutableList();
+            var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, propagateValues, state, shadowPropertyAccessor)).Where(p => p.ValueDirection != ValueDirection.None);
+
+            if (!propagateValues)
+            {
+                columns = columns.Where(p => p.ValueDirection.HasFlag(ValueDirection.Write));
+            }
+
+            _columns = columns.ToImmutableList();
         }
 
         public string SchemaName { get; }
@@ -66,9 +66,56 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             }
         }
 
+#if(NETSTANDARD2_0)
+        private static ValueDirection GetValudDirection(IProperty property, PropertySaveBehavior saveBehavior, ValueGenerated generatorFlag)
+        {
+            if (saveBehavior != PropertySaveBehavior.Save || (property.IsPrimaryKey() && property.ValueGenerated.HasFlag(generatorFlag)))
+            {
+                return ValueDirection.Read;
+            }
+            else
+            {
+                var result = ValueDirection.Write;
+                if (property.ValueGenerated.HasFlag(generatorFlag))
+                {
+                    result = result | ValueDirection.Read;
+                }
+
+                return result;
+            }
+        }
+#else
+
+        private static ValueDirection GetValudDirection(IProperty property, ValueGenerated generatorFlag)
+        {
+            if (property.IsStoreGeneratedAlways || (property.IsPrimaryKey() && property.ValueGenerated == generatorFlag))
+            {
+                return ValueDirection.Read;
+            }
+            else
+            {
+                var result = ValueDirection.Write;
+                if (property.ValueGenerated == generatorFlag)
+                {
+                    result = result | ValueDirection.Read;
+                }
+
+                return result;
+            }
+        }
+
+#endif
+
         private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, bool propagateValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
         {
             var relational = entity.Relational();
+
+            var direction = GetValueDirection(property, state);
+
+            if (!propagateValues)
+            {
+                direction = direction & ~ValueDirection.Read;
+            }
 
             if (relational.DiscriminatorProperty == property)
             {
@@ -86,12 +133,17 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var param = Expression.Parameter(typeof(object), "p");
                 var param2 = Expression.Parameter(typeof(object), "q");
 
-                getValue = Expression.Lambda<Func<object, object>>(
-                    Expression.Call(
+                Expression getValueBody = Expression.Convert(Expression.Call(
                         Expression.Constant(shadowPropertyAccessor, accessorType),
                         accessorType.GetRuntimeMethod("GetValue", new[] { typeof(object), typeof(string) }),
                         param,
                         Expression.Constant(property.Name)),
+                        property.ClrType);
+
+                getValueBody = ProcessDefaultValue(getValueBody, property);
+
+                getValue = Expression.Lambda<Func<object, object>>(
+                    Expression.Convert(getValueBody, typeof(object)),
                     param);
                 setValue = Expression.Lambda<Action<object, object>>(
                     Expression.Call(
@@ -109,25 +161,73 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
                 var cast = Expression.Convert(param, property.DeclaringEntityType.ClrType);
 
-                getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(Expression.Property(cast, property.PropertyInfo), typeof(object)), param);
+                Expression getValueBody = Expression.Property(cast, property.PropertyInfo);
+                getValueBody = ProcessDefaultValue(getValueBody, property);
+
+                getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(getValueBody, typeof(object)), param);
                 setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), Expression.Convert(param2, property.ClrType)), param, param2);
             }
-            return new DelegateColumnSetup(index, property.Relational().ColumnName, property.ClrType, getValue.Compile(), setValue.Compile(), propagateValues ? GetValueDirection(property, state) : ValueDirection.Write);
+            return new DelegateColumnSetup(index, property.Relational().ColumnName, property.ClrType, getValue.Compile(), setValue.Compile(), direction);
         }
 
         private ValueDirection GetValueDirection(IProperty property, EntityState state)
         {
-            if (property.IsStoreGeneratedAlways || (state == EntityState.Added && property.ValueGenerated.HasFlag(ValueGenerated.OnAdd)))
+#if (NETSTANDARD2_0)
+            if (state == EntityState.Added)
             {
-                return ValueDirection.Read;
+                return GetValudDirection(property, property.BeforeSaveBehavior, ValueGenerated.OnAdd);
+            }
+            else if (state == EntityState.Modified)
+            {
+                return GetValudDirection(property, property.AfterSaveBehavior, ValueGenerated.OnUpdate);
+            }
+            else if (state == EntityState.Deleted)
+            {
+                return property.IsPrimaryKey() ? ValueDirection.Write : ValueDirection.None;
+            }
+#else
+            if (state == EntityState.Added)
+            {
+                return GetValudDirection(property, ValueGenerated.OnAdd);
+            }
+            else if (state == EntityState.Modified)
+            {
+                return GetValudDirection(property, ValueGenerated.OnAddOrUpdate);
+            }
+            else if (state == EntityState.Deleted)
+            {
+                return property.IsPrimaryKey() ? ValueDirection.Write : ValueDirection.None;
+            }
+#endif
+            throw new NotSupportedException($"The entity state {state} can not be processed!");
+        }
+
+        private Expression ProcessDefaultValue(Expression getValueBody, IProperty property)
+        {
+            Expression defaultValueExpression = null;
+            var defaultValue = property.Relational().DefaultValue;
+            if (defaultValue != null)
+            {
+                defaultValueExpression = Expression.Constant(defaultValue, property.ClrType);
+            }
+            else
+            {
+                var factory = property.GetValueGeneratorFactory();
+
+                if (factory != null)
+                {
+                    throw new NotSupportedException("Using ValueGeneratorFactories is currently not supported when using the DbContext bulk extension methods.");
+                }
             }
 
-            if (property.ValueGenerated.HasFlag(ValueGenerated.OnAddOrUpdate) && (state == EntityState.Added || state == EntityState.Modified))
+            if (defaultValueExpression != null)
             {
-                return ValueDirection.Both;
+                return Expression.Condition(
+                    Expression.Equal(getValueBody, Expression.Default(property.ClrType)),
+                    defaultValueExpression,
+                    getValueBody);
             }
-
-            return ValueDirection.Write;
+            return getValueBody;
         }
     }
 }
