@@ -116,7 +116,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         {
             for (int i = 0; i < OutboundColumns.Count; i++)
             {
-                values[OutboundColumns[i]] = reader.GetValue(i);
+                var value = reader.GetValue(i);
+                if (value == DBNull.Value)
+                {
+                    value = null;
+                }
+                values[OutboundColumns[i]] = value;
             }
         }
     }

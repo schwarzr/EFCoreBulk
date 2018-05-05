@@ -12,6 +12,7 @@
     <Compile Include="..\Bulk.Test\Model\IShadowPropertyEntity.cs" Link="Model\IShadowPropertyEntity.cs" />
     <Compile Include="..\Bulk.Test\Model\SimpleTableWithIdentity.cs" Link="Model\SimpleTableWithIdentity.cs" />
     <Compile Include="..\Bulk.Test\Model\SimpleTableWithShadowProperty.cs" Link="Model\SimpleTableWithShadowProperty.cs" />
+    <Compile Include="..\Bulk.Test\Model\State.cs" Link="Model\State.cs" />
     <Compile Include="..\Bulk.Test\Model\TpHChildTableOne.cs" Link="Model\TpHChildTableOne.cs" />
     <Compile Include="..\Bulk.Test\Model\TpHChildTableTwo.cs" Link="Model\TpHChildTableTwo.cs" />
     <Compile Include="..\Bulk.Test\ShadowPropertyAccessor.cs" Link="ShadowPropertyAccessor.cs" />

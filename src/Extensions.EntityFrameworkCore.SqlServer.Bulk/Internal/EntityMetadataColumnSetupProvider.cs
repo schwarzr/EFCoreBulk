@@ -208,6 +208,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             var defaultValue = property.Relational().DefaultValue;
             if (defaultValue != null)
             {
+                var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
+                if (type.GetTypeInfo().IsEnum)
+                {
+                    defaultValue = Enum.ToObject(type, defaultValue);
+                }
                 defaultValueExpression = Expression.Constant(defaultValue, property.ClrType);
             }
             else

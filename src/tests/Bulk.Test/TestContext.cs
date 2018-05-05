@@ -36,6 +36,9 @@ namespace Bulk.Test
 
             var entity = modelBuilder.Entity<SimpleTableWithShadowProperty>();
             var prop = entity.Property<string>("Description_de").HasMaxLength(200).HasDefaultValue("DEFAULT").IsRequired();
+            //entity.Property(p => p.ModificationDate).HasDefaultValue(DateTime.MinValue);
+            entity.Property(p => p.ModificationDate).HasDefaultValue(DateTime.MinValue);
+            entity.Property(p => p.State).HasDefaultValue(State.Completed);
             entity.Property<string>("Description_en").HasMaxLength(200);
         }
     }

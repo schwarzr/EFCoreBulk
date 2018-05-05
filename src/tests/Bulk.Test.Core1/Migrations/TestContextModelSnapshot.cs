@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Bulk.Test;
+using Bulk.Test.Model;
 
 namespace Bulk.Test.Core1.Migrations
 {
@@ -64,6 +65,14 @@ namespace Bulk.Test.Core1.Migrations
 
                     b.Property<string>("Description_en")
                         .HasMaxLength(200);
+
+                    b.Property<DateTime?>("ModificationDate")
+                        .ValueGeneratedOnAdd()
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<int>("State")
+                        .ValueGeneratedOnAdd()
+                        .HasDefaultValue(2);
 
                     b.Property<string>("Title")
                         .HasMaxLength(100);

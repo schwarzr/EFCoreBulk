@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Bulk.Test.Model
@@ -8,6 +9,10 @@ namespace Bulk.Test.Model
         private readonly Dictionary<string, object> _shadowValues = new Dictionary<string, object>();
 
         public int Id { get; set; }
+
+        public DateTime? ModificationDate { get; set; }
+
+        public State State { get; set; }
 
         [StringLength(100)]
         public string Title { get; set; }

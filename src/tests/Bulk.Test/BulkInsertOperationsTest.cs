@@ -29,6 +29,7 @@ namespace Bulk.Test
                     if (p % 2 == 0)
                     {
                         result.StoreValue("Description_de", $"Description Value {0}");
+                        result.ModificationDate = DateTime.Now;
                     }
                     return result;
                 })
@@ -42,6 +43,8 @@ namespace Bulk.Test
             Assert.Equal(50, otherItems.Count);
 
             Assert.All(otherItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
+            Assert.All(defaultItems, p => Assert.Equal(p.ModificationDate, DateTime.MinValue));
+            Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
         }
 
         [Fact]
