@@ -48,6 +48,38 @@ namespace Bulk.Test
         }
 
         [Fact]
+        public async Task BulkInsertNoDefaultValueHandlingAsync()
+        {
+            var prov = GetServiceProvider();
+            var ctx = prov.GetService<TestContext>();
+
+            var items = Enumerable.Range(1, 100)
+                .Select(p =>
+                {
+                    var result = new SimpleTableWithShadowProperty
+                    {
+                        Title = $"Title {p}"
+                    };
+                    if (p % 2 == 0)
+                    {
+                        result.ModificationDate = DateTime.Now;
+                    }
+                    return result;
+                })
+                .ToList();
+
+            await ctx.BulkInsertAsync(items, ignoreDefaultValues: true);
+
+            var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => p.ModificationDate == null).ToListAsync();
+            var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => p.ModificationDate != null).ToListAsync();
+            Assert.Equal(50, defaultItems.Count);
+            Assert.Equal(50, otherItems.Count);
+
+            Assert.All(defaultItems, p => Assert.False(p.ModificationDate.HasValue));
+            Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
+        }
+
+        [Fact]
         public async Task BulkInsertNormalUpdateAsync()
         {
             var prov = GetServiceProvider();

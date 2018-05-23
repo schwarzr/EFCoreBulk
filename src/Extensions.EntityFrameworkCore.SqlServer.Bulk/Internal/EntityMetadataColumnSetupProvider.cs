@@ -15,7 +15,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         private readonly ImmutableList<IColumnSetup> _columns;
         private readonly bool _propagateValues;
 
-        public EntityMetadataColumnSetupProvider(IEntityType entity, bool propagateValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
+        public EntityMetadataColumnSetupProvider(IEntityType entity, bool propagateValues, bool ignoreDefaultValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
         {
             _propagateValues = propagateValues;
             var relational = entity.Relational();
@@ -39,7 +39,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 properties = properties.Where(p => entity.Relational().DiscriminatorProperty == p || !p.IsShadowProperty);
             }
 
-            var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, propagateValues, state, shadowPropertyAccessor)).Where(p => p.ValueDirection != ValueDirection.None);
+            var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, propagateValues, ignoreDefaultValues, state, shadowPropertyAccessor)).Where(p => p.ValueDirection != ValueDirection.None);
 
             if (!propagateValues)
             {
@@ -106,7 +106,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
 #endif
 
-        private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, bool propagateValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
+        private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, bool propagateValues, bool ignoreDefaultValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
         {
             var relational = entity.Relational();
 
@@ -140,7 +140,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                         Expression.Constant(property.Name)),
                         property.ClrType);
 
-                getValueBody = ProcessDefaultValue(getValueBody, property);
+                if (!ignoreDefaultValues)
+                {
+                    getValueBody = ProcessDefaultValue(getValueBody, property);
+                }
 
                 getValue = Expression.Lambda<Func<object, object>>(
                     Expression.Convert(getValueBody, typeof(object)),
@@ -162,7 +165,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var cast = Expression.Convert(param, property.DeclaringEntityType.ClrType);
 
                 Expression getValueBody = Expression.Property(cast, property.PropertyInfo);
-                getValueBody = ProcessDefaultValue(getValueBody, property);
+
+                if (!ignoreDefaultValues)
+                {
+                    getValueBody = ProcessDefaultValue(getValueBody, property);
+                }
 
                 getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(getValueBody, typeof(object)), param);
                 setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), Expression.Convert(param2, property.ClrType)), param, param2);
