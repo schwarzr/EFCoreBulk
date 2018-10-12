@@ -12,12 +12,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 {
     public class EntityMetadataColumnSetupProvider : IColumnSetupProvider
     {
+        private readonly BulkOptions _bulkOptions;
         private readonly ImmutableList<IColumnSetup> _columns;
-        private readonly bool _propagateValues;
 
-        public EntityMetadataColumnSetupProvider(IEntityType entity, bool propagateValues, bool ignoreDefaultValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
+        public EntityMetadataColumnSetupProvider(IEntityType entity, EntityState state, BulkOptions bulkOptions)
         {
-            _propagateValues = propagateValues;
+            _bulkOptions = bulkOptions;
             var relational = entity.Relational();
             if (relational == null)
             {
@@ -34,14 +34,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 properties = properties.Where(p => p.IsPrimaryKey());
             }
 
-            if (shadowPropertyAccessor == null)
+            if (_bulkOptions.ShadowPropertyAccessor == null)
             {
                 properties = properties.Where(p => entity.Relational().DiscriminatorProperty == p || !p.IsShadowProperty);
             }
 
-            var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, propagateValues, ignoreDefaultValues, state, shadowPropertyAccessor)).Where(p => p.ValueDirection != ValueDirection.None);
+            var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, state, _bulkOptions)).Where(p => p.ValueDirection != ValueDirection.None);
 
-            if (!propagateValues)
+            if (!bulkOptions.PropagateValues)
             {
                 columns = columns.Where(p => p.ValueDirection.HasFlag(ValueDirection.Write));
             }
@@ -106,13 +106,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
 #endif
 
-        private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, bool propagateValues, bool ignoreDefaultValues, EntityState state, IShadowPropertyAccessor shadowPropertyAccessor)
+        private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, EntityState state, BulkOptions bulkOptions)
         {
             var relational = entity.Relational();
 
             var direction = GetValueDirection(property, state);
 
-            if (!propagateValues)
+            if (!bulkOptions.PropagateValues)
             {
                 direction = direction & ~ValueDirection.Read;
             }
@@ -134,13 +134,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var param2 = Expression.Parameter(typeof(object), "q");
 
                 Expression getValueBody = Expression.Convert(Expression.Call(
-                        Expression.Constant(shadowPropertyAccessor, accessorType),
+                        Expression.Constant(bulkOptions.ShadowPropertyAccessor, accessorType),
                         accessorType.GetRuntimeMethod("GetValue", new[] { typeof(object), typeof(string) }),
                         param,
                         Expression.Constant(property.Name)),
                         property.ClrType);
 
-                if (!ignoreDefaultValues)
+                if (!bulkOptions.IgnoreDefaultValues)
                 {
                     getValueBody = ProcessDefaultValue(getValueBody, property);
                 }
@@ -150,7 +150,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                     param);
                 setValue = Expression.Lambda<Action<object, object>>(
                     Expression.Call(
-                        Expression.Constant(shadowPropertyAccessor, accessorType),
+                        Expression.Constant(bulkOptions.ShadowPropertyAccessor, accessorType),
                         accessorType.GetRuntimeMethod("StoreValue", new[] { typeof(object), typeof(string), typeof(object) }),
                         param,
                         Expression.Constant(property.Name), param2),
@@ -166,7 +166,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
                 Expression getValueBody = Expression.Property(cast, property.PropertyInfo);
 
-                if (!ignoreDefaultValues)
+                if (!bulkOptions.IgnoreDefaultValues)
                 {
                     getValueBody = ProcessDefaultValue(getValueBody, property);
                 }

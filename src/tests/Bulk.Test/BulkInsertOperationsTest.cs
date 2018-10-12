@@ -35,7 +35,7 @@ namespace Bulk.Test
                 })
                 .ToList();
 
-            await ctx.BulkInsertAsync(items, shadowPropertyAccessor: ShadowPropertyAccessor.Current);
+            await ctx.BulkInsertAsync(items, p => p.ShadowPropertyAccessor(ShadowPropertyAccessor.Current));
 
             var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") == "Default").ToListAsync();
             var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") != "Default").ToListAsync();
@@ -68,7 +68,7 @@ namespace Bulk.Test
                 })
                 .ToList();
 
-            await ctx.BulkInsertAsync(items, ignoreDefaultValues: true);
+            await ctx.BulkInsertAsync(items, p => p.IgnoreDefaultValues());
 
             var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => p.ModificationDate == null).ToListAsync();
             var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => p.ModificationDate != null).ToListAsync();
@@ -162,7 +162,7 @@ namespace Bulk.Test
                 })
                 .ToList();
 
-            await ctx.BulkInsertAsync(items, shadowPropertyAccessor: ShadowPropertyAccessor.Current);
+            await ctx.BulkInsertAsync(items, p => p.ShadowPropertyAccessor(ShadowPropertyAccessor.Current));
 
             var allItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
             Assert.All(allItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
@@ -219,7 +219,7 @@ namespace Bulk.Test
                     new SimpleTableWithIdentity { Title = "Extension3" }
                 };
 
-            await ctx.BulkInsertAsync(items, false);
+            await ctx.BulkInsertAsync(items, p => p.PropagateValues(false));
 
             Assert.Equal(0, items[0].Id);
             Assert.Equal(0, items[1].Id);
@@ -265,8 +265,8 @@ namespace Bulk.Test
 
             using (var transaction = await ctx.Database.BeginTransactionAsync())
             {
-                await ctx.BulkInsertAsync(items, false);
-                await ctx.BulkInsertAsync(items2, false);
+                await ctx.BulkInsertAsync(items, p => p.PropagateValues(false));
+                await ctx.BulkInsertAsync(items2, p => p.PropagateValues(false));
 
                 transaction.Commit();
             }
@@ -332,7 +332,7 @@ namespace Bulk.Test
 
             var ctx = prov.GetService<TestContext>();
             var items = Enumerable.Range(0, 100000).Select(p => new SimpleTableWithIdentity { Title = $"Bla{p}" });
-            await ctx.BulkInsertAsync(items, false);
+            await ctx.BulkInsertAsync(items, p => p.PropagateValues(false));
         }
     }
 }

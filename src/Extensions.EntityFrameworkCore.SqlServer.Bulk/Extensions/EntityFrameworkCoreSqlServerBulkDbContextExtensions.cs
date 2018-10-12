@@ -13,7 +13,7 @@ namespace Microsoft.EntityFrameworkCore
 {
     public static class EntityFrameworkCoreSqlServerBulkDbContextExtensions
     {
-        public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, bool propatateValues = true, bool ignoreDefaultValues = false, CancellationToken token = default(CancellationToken), IShadowPropertyAccessor shadowPropertyAccessor = null)
+        public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, Action<BulkOptionsBuilder> bulkOptions = null, CancellationToken token = default(CancellationToken))
         {
             var sp = ((IInfrastructure<IServiceProvider>)context);
             var options = sp.GetService<IDbContextOptions>();
@@ -34,7 +34,10 @@ namespace Microsoft.EntityFrameworkCore
 
             using (var transaction = target.NullDisposable())
             {
-                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, propatateValues, ignoreDefaultValues, EntityState.Added, shadowPropertyAccessor));
+                var builder = new BulkOptionsBuilder();
+                bulkOptions?.Invoke(builder);
+
+                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, EntityState.Added, builder.Options));
                 await insertProcessor.ProcessAsync(relationalConnection, items, token);
                 transaction.Target?.Commit();
             }
