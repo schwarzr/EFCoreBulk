@@ -28,22 +28,32 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             _bulkOptions = bulkOptions;
         }
 
-        public override IReadOnlyList<ModificationCommand> ModificationCommands => _commands;
+        public override IReadOnlyList<ModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
 
         public override bool AddCommand(ModificationCommand modificationCommand)
         {
+            var state = modificationCommand.EntityState;
+            var bulkMode = false;
+
+            if ((state == EntityState.Added && _bulkOptions.BulkInsertEnabled) ||
+                    (state == EntityState.Modified && _bulkOptions.BulkUpdateEnabled) ||
+                    (state == EntityState.Deleted && _bulkOptions.BulkDeleteEnabled))
+            {
+                bulkMode = true;
+            }
+
             if (!_state.HasValue)
             {
-                _state = modificationCommand.EntityState;
+                _state = state;
                 _table = modificationCommand.TableName;
                 _schema = modificationCommand.Schema;
 
-                if ((_state == EntityState.Added && _bulkOptions.BulkInsertEnabled) ||
-                    (_state == EntityState.Modified && _bulkOptions.BulkUpdateEnabled) ||
-                    (_state == EntityState.Deleted && _bulkOptions.BulkDeleteEnabled))
-                {
-                    _bulkMode = true;
-                }
+                _bulkMode = bulkMode;
+            }
+
+            if (bulkMode != _bulkMode)
+            {
+                return false;
             }
 
             if (!_bulkMode)
