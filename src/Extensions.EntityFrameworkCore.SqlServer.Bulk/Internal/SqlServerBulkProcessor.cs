@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
@@ -22,8 +23,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public ImmutableList<IColumnSetup> OutboundColumns { get; }
 
-        public override void Process(IRelationalConnection connection, IEnumerable<TEntity> items)
+        protected abstract string TempTableName { get; }
+
+        public override int Process(IRelationalConnection connection, IEnumerable<TEntity> items)
         {
+            int result = 0;
+
             using (var prepare = PrepareStatement(connection).NullDisposable())
             {
                 if (prepare.Target != null)
@@ -33,7 +38,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             }
 
             using (var bulk = CreateBulkCopy(connection))
-            using (var enumerableReader = new EnumerableDataReader<TEntity>(items, InboundColumns))
+            using (var enumerableReader = new EnumerableDataReader<TEntity>(items, InboundColumns, OutboundColumns.Any()))
             {
                 bulk.WriteToServer(enumerableReader);
 
@@ -53,19 +58,37 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                                     ColumnSetupProvider.PropagateValues(enumerableReader.TrackedItems[run], values);
                                     run++;
                                 }
+
+                                result = run;
                             }
                         }
                         else
                         {
-                            commit.Target.ExecuteNonQuery();
+                            result = commit.Target.ExecuteNonQuery();
                         }
+                    }
+                    else
+                    {
+                        result = enumerableReader.Position;
                     }
                 }
             }
+
+            using (var commit = CleanupStatement(connection).NullDisposable())
+            {
+                if (commit.Target != null)
+                {
+                    commit.Target.ExecuteNonQuery();
+                }
+            }
+
+            return result;
         }
 
-        public override async Task ProcessAsync(IRelationalConnection connection, IEnumerable<TEntity> items, CancellationToken cancellation = default(CancellationToken))
+        public override async Task<int> ProcessAsync(IRelationalConnection connection, IEnumerable<TEntity> items, CancellationToken cancellation = default(CancellationToken))
         {
+            int result = 0;
+
             using (var prepare = PrepareStatement(connection).NullDisposable())
             {
                 if (prepare.Target != null)
@@ -95,15 +118,48 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                                     ColumnSetupProvider.PropagateValues(enumerableReader.TrackedItems[run], values);
                                     run++;
                                 }
+
+                                result = run;
                             }
                         }
                         else
                         {
-                            await commit.Target.ExecuteNonQueryAsync(cancellation);
+                            result = await commit.Target.ExecuteNonQueryAsync(cancellation);
                         }
+                    }
+                    else
+                    {
+                        result = enumerableReader.Position;
                     }
                 }
             }
+
+            using (var commit = CleanupStatement(connection).NullDisposable())
+            {
+                if (commit.Target != null)
+                {
+                    await commit.Target.ExecuteNonQueryAsync(cancellation);
+                }
+            }
+
+            return result;
+        }
+
+        protected virtual SqlCommand CleanupStatement(IRelationalConnection connection)
+        {
+            var tempTableName = TempTableName;
+            if (tempTableName != null)
+            {
+                var commandText = $"DROP TABLE {tempTableName}";
+
+                var command = connection.DbConnection.CreateCommand();
+                command.CommandText = commandText;
+                command.Transaction = connection.CurrentTransaction.GetDbTransaction();
+                command.CommandTimeout = connection.CommandTimeout ?? 60;
+                return (SqlCommand)command;
+            }
+
+            return null;
         }
 
         protected abstract SqlCommand CommitStatement(IRelationalConnection connection);

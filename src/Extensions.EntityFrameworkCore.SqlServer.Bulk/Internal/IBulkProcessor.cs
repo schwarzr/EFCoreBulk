@@ -11,8 +11,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         EntityState State { get; }
 
-        void Process(IRelationalConnection connection, IEnumerable<TItem> items);
+        int Process(IRelationalConnection connection, IEnumerable<TItem> items);
 
-        Task ProcessAsync(IRelationalConnection connection, IEnumerable<TItem> items, CancellationToken cancellation = default(CancellationToken));
+        Task<int> ProcessAsync(IRelationalConnection connection, IEnumerable<TItem> items, CancellationToken cancellation = default(CancellationToken));
     }
 }

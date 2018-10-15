@@ -5,6 +5,7 @@
         public SqlServerBulkOptions()
         {
             InsertEnabled = true;
+            DeleteEnabled = true;
         }
 
         public bool DeleteEnabled { get; set; }

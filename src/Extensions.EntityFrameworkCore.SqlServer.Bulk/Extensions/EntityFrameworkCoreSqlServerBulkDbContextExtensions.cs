@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -13,20 +14,32 @@ namespace Microsoft.EntityFrameworkCore
 {
     public static class EntityFrameworkCoreSqlServerBulkDbContextExtensions
     {
-        public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, Action<BulkOptionsBuilder> bulkOptions = null, CancellationToken token = default(CancellationToken))
+        public static async Task BulkDeleteAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, Action<BulkOptionsBuilder> bulkOptions = null, CancellationToken token = default(CancellationToken))
         {
-            var sp = ((IInfrastructure<IServiceProvider>)context);
-            var options = sp.GetService<IDbContextOptions>();
-            var entity = context.Model.FindEntityType(typeof(TEntity));
+            GetBulkInfrstructure<TEntity>(context, out var sp, out var entity, out var relationalConnection);
 
-            if (entity == null)
+            IDbContextTransaction target = null;
+            if (relationalConnection.CurrentTransaction == null)
             {
-                throw new NotSupportedException($"The type {typeof(TEntity)} is not part of the EntityFramework metadata model. Only mapped entities are supported.");
+                target = await relationalConnection.BeginTransactionAsync(token);
             }
 
-            var relationalConnection = sp.GetService<IRelationalConnection>();
-            IDbContextTransaction target = null;
+            using (var transaction = target.NullDisposable())
+            {
+                var builder = new BulkOptionsBuilder();
+                bulkOptions?.Invoke(builder);
 
+                var processor = new DeleteBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, EntityState.Deleted, builder.Options));
+                await processor.ProcessAsync(relationalConnection, items, token);
+                transaction.Target?.Commit();
+            }
+        }
+
+        public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, Action<BulkOptionsBuilder> bulkOptions = null, CancellationToken token = default(CancellationToken))
+        {
+            GetBulkInfrstructure<TEntity>(context, out var sp, out var entity, out var relationalConnection);
+
+            IDbContextTransaction target = null;
             if (relationalConnection.CurrentTransaction == null)
             {
                 target = await relationalConnection.BeginTransactionAsync(token);
@@ -41,6 +54,20 @@ namespace Microsoft.EntityFrameworkCore
                 await insertProcessor.ProcessAsync(relationalConnection, items, token);
                 transaction.Target?.Commit();
             }
+        }
+
+        private static void GetBulkInfrstructure<TEntity>(DbContext context, out IInfrastructure<IServiceProvider> sp, out IEntityType entity, out IRelationalConnection relationalConnection)
+        {
+            sp = (IInfrastructure<IServiceProvider>)context;
+            var options = sp.GetService<IDbContextOptions>();
+            entity = context.Model.FindEntityType(typeof(TEntity));
+
+            if (entity == null)
+            {
+                throw new NotSupportedException($"The type {typeof(TEntity)} is not part of the EntityFramework metadata model. Only mapped entities are supported.");
+            }
+
+            relationalConnection = sp.GetService<IRelationalConnection>();
         }
     }
 }

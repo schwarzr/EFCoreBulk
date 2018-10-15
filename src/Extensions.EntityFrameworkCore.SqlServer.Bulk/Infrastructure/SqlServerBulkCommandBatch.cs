@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
@@ -65,7 +66,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             if (_bulkMode)
             {
                 var processor = GetBulkProcessor();
-                processor.Process(connection, _commands);
+                var result = processor.Process(connection, _commands);
+                if (result != _commands.Count)
+                {
+                    ThrowAggregateUpdateConcurrencyException(_commands.Count, result);
+                }
             }
             else
             {
@@ -78,7 +83,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             if (_bulkMode)
             {
                 var processor = GetBulkProcessor();
-                await processor.ProcessAsync(connection, _commands, cancellationToken);
+                var result = await processor.ProcessAsync(connection, _commands, cancellationToken);
+                if (result != _commands.Count)
+                {
+                    ThrowAggregateUpdateConcurrencyException(_commands.Count, result);
+                }
             }
             else
             {
@@ -86,12 +95,23 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             }
         }
 
+        protected virtual void ThrowAggregateUpdateConcurrencyException(
+            int expectedRowsAffected,
+            int rowsAffected)
+        {
+            var entries = _commands.SelectMany(p => p.Entries).ToImmutableList();
+
+            throw new DbUpdateConcurrencyException(
+                RelationalStrings.UpdateConcurrencyException(expectedRowsAffected, rowsAffected),
+                entries);
+        }
+
         private IBulkProcessor<ModificationCommand> GetBulkProcessor()
         {
             switch (_state)
             {
                 case EntityState.Deleted:
-                    break;
+                    return new DeleteBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands));
 
                 case EntityState.Modified:
                     break;

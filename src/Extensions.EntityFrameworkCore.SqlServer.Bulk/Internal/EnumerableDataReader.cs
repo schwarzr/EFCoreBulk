@@ -42,6 +42,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public override bool IsClosed => _isClosed;
 
+        public int Position { get; private set; }
+
         public override int RecordsAffected => throw new NotImplementedException();
 
         public ReadOnlyCollection<TItem> TrackedItems { get; }
@@ -192,6 +194,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             if (_trackItems && result)
             {
                 _trackedItems.Add(_enumerator.Current);
+            }
+
+            if (result)
+            {
+                Position++;
             }
 
             return result;

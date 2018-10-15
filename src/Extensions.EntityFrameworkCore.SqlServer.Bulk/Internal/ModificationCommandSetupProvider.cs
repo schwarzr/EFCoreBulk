@@ -25,17 +25,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 foreach (var modification in command.ColumnModifications)
                 {
                     var name = modification.ColumnName;
-                    var direction = ValueDirection.None;
-                    if (modification.IsWrite)
-                    {
-                        direction = direction | ValueDirection.Write;
-                    }
-                    if (modification.IsRead)
-                    {
-                        direction = direction | ValueDirection.Read;
-                    }
-
-                    columns.GetOrAdd(name, p => new DelegateColumnSetup(columns.Count, p, modification.Property.ClrType, x => GetColumnValue(x, name), (x, y) => { }, direction));
+                    columns.GetOrAdd(name, p => new DelegateColumnSetup(columns.Count, p, modification.Property.ClrType, x => GetColumnValue(x, name), (x, y) => { }, GetDirection(modification)));
                 }
             }
 
@@ -71,6 +61,28 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             }
 
             return null;
+        }
+
+        private static ValueDirection GetDirection(ColumnModification modification)
+        {
+            var direction = ValueDirection.None;
+            if (modification.Entry.EntityState == EntityState.Deleted && modification.IsKey)
+            {
+                direction = ValueDirection.Write;
+            }
+            else
+            {
+                if (modification.IsWrite)
+                {
+                    direction = direction | ValueDirection.Write;
+                }
+                if (modification.IsRead)
+                {
+                    direction = direction | ValueDirection.Read;
+                }
+            }
+
+            return direction;
         }
     }
 }
