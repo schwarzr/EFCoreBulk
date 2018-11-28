@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Bulk.Test.Model;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

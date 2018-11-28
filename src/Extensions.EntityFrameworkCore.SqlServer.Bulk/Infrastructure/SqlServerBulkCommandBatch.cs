@@ -121,13 +121,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             switch (_state)
             {
                 case EntityState.Deleted:
-                    return new DeleteBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands));
+                    return new DeleteBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Deleted));
 
                 case EntityState.Modified:
                     break;
 
                 case EntityState.Added:
-                    return new InsertBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands));
+                    return new InsertBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Added));
             }
 
             return null;

@@ -11,11 +11,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
     public class InsertBulkProcessor<TEntity> : SqlServerBulkProcessor<TEntity>
     {
         private readonly string _bulkTable;
+        private readonly Action<SqlBulkCopy> _setup;
         private readonly string _targetTableName;
         private readonly string _tempTableName;
 
-        public InsertBulkProcessor(IColumnSetupProvider columnSetupProvider) : base(EntityState.Added, columnSetupProvider)
+        public InsertBulkProcessor(IColumnSetupProvider columnSetupProvider, SqlBulkCopyOptions options, Action<SqlBulkCopy> setup = null)
+            : base(EntityState.Added, columnSetupProvider, options)
         {
+            _setup = setup;
             _targetTableName = $"[{columnSetupProvider.TableName}]";
             _bulkTable = _targetTableName;
 
@@ -60,10 +63,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         protected override SqlBulkCopy CreateBulkCopy(IRelationalConnection connection)
         {
-            var bulk = new SqlBulkCopy((SqlConnection)connection.DbConnection, SqlBulkCopyOptions.CheckConstraints | SqlBulkCopyOptions.FireTriggers, (SqlTransaction)connection.CurrentTransaction.GetDbTransaction());
+            var bulk = new SqlBulkCopy((SqlConnection)connection.DbConnection, this.SqlBulkCopyOptions, (SqlTransaction)connection.CurrentTransaction.GetDbTransaction());
             bulk.BulkCopyTimeout = connection.CommandTimeout ?? 60;
             bulk.DestinationTableName = _bulkTable;
             InboundColumns.ForEach(p => bulk.ColumnMappings.Add(p.ColumnName, p.ColumnName));
+
+            _setup?.Invoke(bulk);
 
             return bulk;
         }

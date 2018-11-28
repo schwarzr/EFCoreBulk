@@ -13,8 +13,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 {
     public abstract class SqlServerBulkProcessor<TEntity> : BulkProcessor<TEntity>
     {
-        public SqlServerBulkProcessor(EntityState state, IColumnSetupProvider columnSetupProvider) : base(state, columnSetupProvider)
+        public SqlServerBulkProcessor(EntityState state, IColumnSetupProvider columnSetupProvider, SqlBulkCopyOptions options)
+            : base(state, columnSetupProvider)
         {
+            SqlBulkCopyOptions = options;
+
             InboundColumns = ImmutableList.CreateRange(columnSetupProvider.Build().Where(p => p.ValueDirection.HasFlag(ValueDirection.Write)));
             OutboundColumns = ImmutableList.CreateRange(columnSetupProvider.Build().Where(p => p.ValueDirection.HasFlag(ValueDirection.Read)));
         }
@@ -22,6 +25,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         public ImmutableList<IColumnSetup> InboundColumns { get; }
 
         public ImmutableList<IColumnSetup> OutboundColumns { get; }
+
+        public SqlBulkCopyOptions SqlBulkCopyOptions { get; }
 
         protected abstract string TempTableName { get; }
 

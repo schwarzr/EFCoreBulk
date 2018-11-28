@@ -29,7 +29,9 @@ namespace Microsoft.EntityFrameworkCore
                 var builder = new BulkOptionsBuilder();
                 bulkOptions?.Invoke(builder);
 
-                var processor = new DeleteBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, EntityState.Deleted, builder.Options));
+                var options = builder.Options;
+
+                var processor = new DeleteBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, EntityState.Deleted, options), options.GetSqlBulkOptions(EntityState.Deleted), options.Setup);
                 await processor.ProcessAsync(relationalConnection, items, token);
                 transaction.Target?.Commit();
             }
@@ -50,7 +52,9 @@ namespace Microsoft.EntityFrameworkCore
                 var builder = new BulkOptionsBuilder();
                 bulkOptions?.Invoke(builder);
 
-                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, EntityState.Added, builder.Options));
+                var options = builder.Options;
+
+                var insertProcessor = new InsertBulkProcessor<TEntity>(new EntityMetadataColumnSetupProvider(entity, EntityState.Added, options), options.GetSqlBulkOptions(EntityState.Added), options.Setup);
                 await insertProcessor.ProcessAsync(relationalConnection, items, token);
                 transaction.Target?.Commit();
             }

@@ -112,6 +112,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
             var direction = GetValueDirection(property, state);
 
+            if (property.IsPrimaryKey() && _bulkOptions.IdentityInsert)
+            {
+                direction = ValueDirection.Write;
+            }
+
             if (!bulkOptions.PropagateValues)
             {
                 direction = direction & ~ValueDirection.Read;

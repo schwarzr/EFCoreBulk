@@ -14,6 +14,30 @@ namespace Bulk.Test
     public class BulkInsertOperationsTest : DatabaseTest
     {
         [Fact]
+        public async Task BulkInsertCustomOptionsTest()
+        {
+            var prov = GetServiceProvider();
+            using ((IDisposable)prov)
+            {
+                var ctx = prov.GetService<TestContext>();
+
+                var item1 = new SimpleTableWithIdentity { Id = 11, Title = "Bla1" };
+                var item2 = new SimpleTableWithIdentity { Id = 12, Title = "Bla2" };
+                var item3 = new SimpleTableWithIdentity { Id = 13, Title = "Bla3" };
+
+                await ctx.BulkInsertAsync(new[] { item1, item2, item3 },
+                    builder => builder.IdentityInsert().SqlBulkOptions(p => SqlBulkCopyOptions.TableLock));
+
+                var items = await ctx.SimpleTableWithIdentity.ToListAsync();
+
+                Assert.Equal(3, items.Count);
+                Assert.DoesNotContain(items, p => p.Id == 11);
+                Assert.DoesNotContain(items, p => p.Id == 12);
+                Assert.DoesNotContain(items, p => p.Id == 13);
+            }
+        }
+
+        [Fact]
         public async Task BulkInsertDefaultValuesForPropertiesAsync()
         {
             var prov = GetServiceProvider();
@@ -45,6 +69,29 @@ namespace Bulk.Test
             Assert.All(otherItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
             Assert.All(defaultItems, p => Assert.Equal(p.ModificationDate, DateTime.MinValue));
             Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
+        }
+
+        [Fact]
+        public async Task BulkInsertIdentityInsertTest()
+        {
+            var prov = GetServiceProvider();
+            using ((IDisposable)prov)
+            {
+                var ctx = prov.GetService<TestContext>();
+
+                var item1 = new SimpleTableWithIdentity { Id = 11, Title = "Bla1" };
+                var item2 = new SimpleTableWithIdentity { Id = 12, Title = "Bla2" };
+                var item3 = new SimpleTableWithIdentity { Id = 13, Title = "Bla3" };
+
+                await ctx.BulkInsertAsync(new[] { item1, item2, item3 }, p => p.IdentityInsert());
+
+                var items = await ctx.SimpleTableWithIdentity.ToListAsync();
+
+                Assert.Equal(3, items.Count);
+                Assert.Contains(items, p => p.Id == 11);
+                Assert.Contains(items, p => p.Id == 12);
+                Assert.Contains(items, p => p.Id == 13);
+            }
         }
 
         [Fact]
@@ -118,6 +165,29 @@ namespace Bulk.Test
             Assert.NotEqual(item1.Id, item2.Id);
             Assert.NotEqual(item2.Id, item3.Id);
             Assert.NotEqual(item1.Id, item3.Id);
+        }
+
+        [Fact]
+        public async Task BulkInsertSetupTest()
+        {
+            var prov = GetServiceProvider();
+            using ((IDisposable)prov)
+            {
+                var ctx = prov.GetService<TestContext>();
+
+                var item1 = new SimpleTableWithIdentity { Id = 11, Title = "Bla1" };
+                var item2 = new SimpleTableWithIdentity { Id = 12, Title = "Bla2" };
+                var item3 = new SimpleTableWithIdentity { Id = 13, Title = "Bla3" };
+
+                bool wasCalled = false;
+
+                await ctx.BulkInsertAsync(new[] { item1, item2, item3 }, p => p.Setup(x => wasCalled = true));
+
+                var items = await ctx.SimpleTableWithIdentity.ToListAsync();
+
+                Assert.Equal(3, items.Count);
+                Assert.True(wasCalled);
+            }
         }
 
         [Fact]

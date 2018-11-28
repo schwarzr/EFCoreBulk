@@ -11,10 +11,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
     public class DeleteBulkProcessor<TEntity> : SqlServerBulkProcessor<TEntity>
     {
         private readonly string _bulkTable;
+        private readonly Action<SqlBulkCopy> _setup;
         private readonly string _targetTableName;
 
-        public DeleteBulkProcessor(IColumnSetupProvider columnSetupProvider) : base(EntityState.Deleted, columnSetupProvider)
+        public DeleteBulkProcessor(IColumnSetupProvider columnSetupProvider, SqlBulkCopyOptions options, Action<SqlBulkCopy> setup = null)
+            : base(EntityState.Deleted, columnSetupProvider, options)
         {
+            _setup = setup;
+
             _targetTableName = $"[{columnSetupProvider.TableName}]";
             _bulkTable = $"[#{columnSetupProvider.TableName}_{State}]";
 
@@ -43,10 +47,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         protected override SqlBulkCopy CreateBulkCopy(IRelationalConnection connection)
         {
-            var bulk = new SqlBulkCopy((SqlConnection)connection.DbConnection, SqlBulkCopyOptions.CheckConstraints | SqlBulkCopyOptions.FireTriggers | SqlBulkCopyOptions.KeepIdentity, (SqlTransaction)connection.CurrentTransaction.GetDbTransaction());
+            var bulk = new SqlBulkCopy((SqlConnection)connection.DbConnection, this.SqlBulkCopyOptions, (SqlTransaction)connection.CurrentTransaction.GetDbTransaction());
             bulk.BulkCopyTimeout = connection.CommandTimeout ?? 60;
             bulk.DestinationTableName = _bulkTable;
             InboundColumns.ForEach(p => bulk.ColumnMappings.Add(p.ColumnName, p.ColumnName));
+
+            _setup?.Invoke(bulk);
 
             return bulk;
         }
