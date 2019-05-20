@@ -11,6 +11,10 @@ pool:
   name: Hosted Windows 2019 with VS2019
 
 steps:
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: 'sqllocaldb start mssqllocaldb'
 - task: DownloadSecureFile@1
   inputs:
     secureFile: 'signkey.snk'
