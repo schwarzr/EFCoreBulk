@@ -24,7 +24,7 @@ namespace Bulk.Test
         public DatabaseTest()
         {
             _databaseName = Guid.NewGuid().ToString("N");
-            using (var connection = new SqlConnection($"Data Source=.\\sqlexpress;Initial Catalog=master;Integrated Security=True;"))
+            using (var connection = new SqlConnection($"Data Source=(localdb)\\mssqllocaldb;Initial Catalog=master;Integrated Security=True;"))
             using (var command = connection.CreateCommand())
             {
                 connection.Open();
@@ -34,7 +34,7 @@ namespace Bulk.Test
 
             var coll = new ServiceCollection();
             coll
-                .AddDbContext<TestContext>(p => p.UseSqlServer($"Data Source=.\\sqlexpress;Initial Catalog={_databaseName};Integrated Security=True;"));
+                .AddDbContext<TestContext>(p => p.UseSqlServer($"Data Source=(localdb)\\mssqllocaldb;Initial Catalog={_databaseName};Integrated Security=True;"));
 
             _nonBulkServiceProvider = coll.BuildServiceProvider();
             using (var scope = _nonBulkServiceProvider.CreateScope())
@@ -86,7 +86,7 @@ namespace Bulk.Test
         {
             var coll = new ServiceCollection();
             coll
-                .AddDbContext<TestContext>(p => p.UseSqlServer($"Data Source=.\\sqlexpress;Initial Catalog={_databaseName};Integrated Security=True;")
+                .AddDbContext<TestContext>(p => p.UseSqlServer($"Data Source=(localdb)\\mssqllocaldb;Initial Catalog={_databaseName};Integrated Security=True;")
                 .AddBulk(config)
             );
 
