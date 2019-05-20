@@ -9,4 +9,4 @@ New-NugetPackages `
     -VersionPackage "Extensions.EntityFrameworkCore.SqlServer.Bulk" `
     -VersionFilePath "..\version.json" `
     -OutputPath "..\dist\nuget\" `
-    -MsBuildParams "EfVersion=1;SourceLinkCreate=true;SignAssembly=true;AssemblyOriginatorKeyFile=..\..\private\signkey.snk"
+    -MsBuildParams "SourceLinkCreate=true;SignAssembly=true;AssemblyOriginatorKeyFile=..\..\private\signkey.snk"

@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.10
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.202
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.EntityFrameworkCore.SqlServer.Bulk", "Extensions.EntityFrameworkCore.SqlServer.Bulk\Extensions.EntityFrameworkCore.SqlServer.Bulk.csproj", "{92CB63F3-7196-43D5-A5D4-63CED17B4D27}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk.Test", "tests\Bulk.Test\Bulk.Test.csproj", "{A7E72D3D-A4D1-4285-A1CC-CEDD7E373C1B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk.Test.Core1", "tests\Bulk.Test.Core1\Bulk.Test.Core1.csproj", "{1866F821-5E37-4131-B3E3-9EB354B004DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +21,6 @@ Global
 		{A7E72D3D-A4D1-4285-A1CC-CEDD7E373C1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7E72D3D-A4D1-4285-A1CC-CEDD7E373C1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7E72D3D-A4D1-4285-A1CC-CEDD7E373C1B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1866F821-5E37-4131-B3E3-9EB354B004DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1866F821-5E37-4131-B3E3-9EB354B004DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1866F821-5E37-4131-B3E3-9EB354B004DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1866F821-5E37-4131-B3E3-9EB354B004DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
