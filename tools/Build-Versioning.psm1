@@ -108,6 +108,10 @@ function New-NugetPackages {
         }
 
         $nextVersion = Get-NugetVersionInfo -NugetServerUrl $NugetServerUrl -Package $VersionPackage -Major $data.major -Minor $data.minor -BuildNumberPrefix $data.buildNumberPrefix -Prerelease $data.prerelease    
+        
+        
+        Write-Host "##vso[build.updatebuildnumber]$($nextVersion.NugetVersion)"
+        
         $params = "Configuration=Release;Version=$($nextVersion.NugetVersion);AssemblyVersion=$($nextVersion.Major).0.0.0;FileVersion=$($nextVersion.Major).$($nextVersion.Minor).$($nextVersion.Build).$($nextVersion.Release)"
         
         if ( -not [string]::IsNullOrWhiteSpace($MsBuildParams)) {
