@@ -26,3 +26,13 @@ steps:
     filePath: './tools/build.ps1'
     workingDirectory: './tools'
   displayName: 'Run the build script'
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: './dist/nuget'
+    Contents: '*.nupkg'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
