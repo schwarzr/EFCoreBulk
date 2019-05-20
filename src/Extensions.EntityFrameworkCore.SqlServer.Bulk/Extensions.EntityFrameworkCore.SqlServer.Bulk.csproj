@@ -8,7 +8,7 @@
     <Description>Extensions for EntityFramework Core to use SqlServers SqlBulkCopy in order to provide high performance Insert, Update and Delete mass operations.</Description>
     <Copyright>copyright © Raphael Schwarz 2019</Copyright>
     <PackageProjectUrl>https://github.com/schwarzr/EFCoreBulk</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/schwarzr/EFCoreBulk/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>ef Entity Framework Core bulk insert bulk-insert</PackageTags>
     <PackageId>Extensions.EntityFrameworkCore.SqlServer.Bulk</PackageId>
     <RootNamespace>Microsoft.EntityFrameworkCore.SqlServer.Bulk</RootNamespace>
