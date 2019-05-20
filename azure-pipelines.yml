@@ -11,6 +11,16 @@ pool:
   name: Hosted Windows 2019 with VS2019
 
 steps:
+- task: @1
+  inputs:
+    secureFile: 'signkey.snk'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(Agent.TempDirectory)'
+    Contents: 'signkey.snk'
+    TargetFolder: './private'
+
 - task: PowerShell@2
   inputs:
     filePath: './tools/build.ps1'
