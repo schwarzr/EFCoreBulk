@@ -20,6 +20,8 @@ steps:
     Contents: 'signkey.snk'
     TargetFolder: './private'
 - task: PowerShell@2
+  env:
+    BUILD_PRERELEASE: $(Build.Prerelease)
   inputs:
     filePath: './tools/build.ps1'
     workingDirectory: './tools'
