@@ -13,6 +13,6 @@ pool:
 steps:
 - task: PowerShell@2
   inputs:
-    filePath: './build.ps1'
+    filePath: './tools/build.ps1'
     workingDirectory: './tools'
   displayName: 'Run the build script'
