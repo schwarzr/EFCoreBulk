@@ -102,6 +102,11 @@ function New-NugetPackages {
         }
         
         $data = Get-Content $versionFile.FullName | ConvertFrom-Json
+
+        if (Test-Path env:BUILD_PRERELEASE) {
+            $data = $data | Add-Member -NotePropertyMembers @{prerelease=$env:BUILD_PRERELEASE} -PassThru
+        }
+
         $nextVersion = Get-NugetVersionInfo -NugetServerUrl $NugetServerUrl -Package $VersionPackage -Major $data.major -Minor $data.minor -BuildNumberPrefix $data.buildNumberPrefix -Prerelease $data.prerelease    
         $params = "Configuration=Release;Version=$($nextVersion.NugetVersion);AssemblyVersion=$($nextVersion.Major).0.0.0;FileVersion=$($nextVersion.Major).$($nextVersion.Minor).$($nextVersion.Build).$($nextVersion.Release)"
         
