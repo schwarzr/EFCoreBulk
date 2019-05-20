@@ -19,6 +19,12 @@ steps:
     SourceFolder: '$(Agent.TempDirectory)'
     Contents: 'signkey.snk'
     TargetFolder: './private'
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'test'
+    projects: './src/tests/Bulk.Test/Bulk.Test.csproj'
+    feedsToUse: 'select'
+    versioningScheme: 'off'
 - task: PowerShell@2
   env:
     BUILD_PRERELEASE: $(Build.Prerelease)
