@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
@@ -43,7 +44,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public void PropagateValues(object entity, IDictionary<IColumnSetup, object> values)
         {
-            ((ModificationCommand)entity).PropagateResults(new Storage.ValueBuffer(values.OrderBy(p => p.Key.Ordinal).Select(p => p.Value).ToArray()));
+            ((ModificationCommand)entity).PropagateResults(new ValueBuffer(values.OrderBy(p => p.Key.Ordinal).Select(p => p.Value).ToArray()));
         }
 
         private static object GetColumnValue(object parma, string name)
