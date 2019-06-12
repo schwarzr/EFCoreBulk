@@ -31,7 +31,7 @@ steps:
     versioningScheme: 'off'
 - task: PowerShell@2
   env:
-    BUILD_PRERELEASE: $(Build.Prerelease)
+    BUILD_PRERELEASE: '$(Build.Prerelease)'
   inputs:
     filePath: './tools/build.ps1'
     workingDirectory: './tools'
