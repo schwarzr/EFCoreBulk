@@ -9,20 +9,23 @@ namespace Microsoft.EntityFrameworkCore
 {
     public static class SqlServerBulkDbContextOptionsExtensions
     {
-        public static DbContextOptionsBuilder AddBulk(this DbContextOptionsBuilder optionsBuilder, Action<SqlServerBulkOptions> configure = null)
+
+        public static SqlServerDbContextOptionsBuilder AddBulk(this SqlServerDbContextOptionsBuilder builder, Action<SqlServerBulkOptions> configure = null)
         {
-            var extension = GetOrCreateExtension(optionsBuilder);
 
-            var options = new SqlServerBulkOptions();
-            configure?.Invoke(options);
-            extension.ApplyOptions(options);
+            ((IRelationalDbContextOptionsBuilderInfrastructure)builder).OptionsBuilder.AddBulk(configure);
+            return builder;
+        }
 
+        private static DbContextOptionsBuilder AddBulk(this DbContextOptionsBuilder optionsBuilder, Action<SqlServerBulkOptions> configure = null)
+        {
+            var extension = GetOrCreateExtension(optionsBuilder, p => { configure?.Invoke(p); return p; });
             ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(extension);
 
             return optionsBuilder;
         }
 
-        private static SqlServerBulkOptionsExtension GetOrCreateExtension(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.Options.FindExtension<SqlServerBulkOptionsExtension>() ?? new SqlServerBulkOptionsExtension();
+        private static SqlServerBulkOptionsExtension GetOrCreateExtension(DbContextOptionsBuilder optionsBuilder, Func<SqlServerBulkOptions, SqlServerBulkOptions> factory)
+            => optionsBuilder.Options.FindExtension<SqlServerBulkOptionsExtension>() ?? new SqlServerBulkOptionsExtension(factory(new SqlServerBulkOptions()));
     }
 }

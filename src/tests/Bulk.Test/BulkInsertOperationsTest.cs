@@ -83,7 +83,7 @@ namespace Bulk.Test
                 var item2 = new SimpleTableWithIdentity { Id = 12, Title = "Bla2" };
                 var item3 = new SimpleTableWithIdentity { Id = 13, Title = "Bla3" };
 
-                await ctx.BulkInsertAsync(new[] { item1, item2, item3 }, p => p.IdentityInsert());
+                await ctx.BulkInsertAsync(new[] { item1, item2, item3 }, p => p.IdentityInsert(true).PropagateValues(true));
 
                 var items = await ctx.SimpleTableWithIdentity.ToListAsync();
 

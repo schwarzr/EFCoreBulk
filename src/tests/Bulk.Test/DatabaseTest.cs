@@ -86,8 +86,7 @@ namespace Bulk.Test
         {
             var coll = new ServiceCollection();
             coll
-                .AddDbContext<TestContext>(p => p.UseSqlServer($"Data Source=(localdb)\\mssqllocaldb;Initial Catalog={_databaseName};Integrated Security=True;")
-                .AddBulk(config)
+                .AddDbContext<TestContext>(p => p.UseSqlServer($"Data Source=(localdb)\\mssqllocaldb;Initial Catalog={_databaseName};Integrated Security=True;", options => options.AddBulk(config))
             );
 
             var result = coll.BuildServiceProvider();

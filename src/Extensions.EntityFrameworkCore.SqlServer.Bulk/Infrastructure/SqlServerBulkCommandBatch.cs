@@ -14,14 +14,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
     public class SqlServerBulkModificationCommandBatch : ModificationCommandBatch
     {
         private bool _bulkMode;
-        private SqlServerBulkOptionsExtension _bulkOptions;
+        private SqlServerBulkOptions _bulkOptions;
         private ImmutableList<ModificationCommand> _commands;
         private ModificationCommandBatch _modificationCommandBatch;
         private string _schema;
         private EntityState? _state;
         private string _table;
 
-        public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptionsExtension bulkOptions)
+        public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions)
         {
             this._modificationCommandBatch = modificationCommandBatch;
             _commands = ImmutableList.Create<ModificationCommand>();
@@ -35,9 +35,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             var state = modificationCommand.EntityState;
             var bulkMode = false;
 
-            if ((state == EntityState.Added && _bulkOptions.BulkInsertEnabled) ||
-                    (state == EntityState.Modified && _bulkOptions.BulkUpdateEnabled) ||
-                    (state == EntityState.Deleted && _bulkOptions.BulkDeleteEnabled))
+            if ((state == EntityState.Added && _bulkOptions.InsertEnabled) ||
+                    (state == EntityState.Deleted && _bulkOptions.DeleteEnabled))
             {
                 bulkMode = true;
             }
@@ -122,9 +121,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             {
                 case EntityState.Deleted:
                     return new DeleteBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Deleted));
-
-                case EntityState.Modified:
-                    break;
 
                 case EntityState.Added:
                     return new InsertBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Added));

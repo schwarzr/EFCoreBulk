@@ -13,12 +13,7 @@ namespace Bulk.Test
         [Fact]
         public async Task BulkDeleteNormalInsertAndUpdateWithSaveChangesAsync()
         {
-            var prov = GetServiceProvider(p =>
-            {
-                p.DeleteEnabled = true;
-                p.InsertEnabled = false;
-                p.UpdateEnabled = false;
-            });
+            var prov = GetServiceProvider(p => p.EnableBulkDelete().EnableBulkInsert(false));
 
             var ctx = prov.GetService<TestContext>();
 

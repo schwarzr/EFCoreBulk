@@ -7,42 +7,28 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
 {
     public class SqlServerBulkOptionsExtension : IDbContextOptionsExtension
     {
-        public bool BulkDeleteEnabled { get; private set; }
+        private readonly SqlServerBulkOptions _bulkOptions;
 
-        public bool BulkInsertEnabled { get; private set; }
-
-        public bool BulkUpdateEnabled { get; private set; }
+        public SqlServerBulkOptionsExtension(SqlServerBulkOptions bulkOptions)
+        {
+            _bulkOptions = bulkOptions;
+        }
 
         public string LogFragment => "SqlServerBulk";
-#if (NETSTANDARD2_0)
         public bool ApplyServices(IServiceCollection services)
         {
-#else
-
-        public void ApplyServices(IServiceCollection services)
-        {
-#endif
             services.AddScoped<IModificationCommandBatchFactory, BulkModificationCommantBatchFactory>();
-#if (NETSTANDARD2_0)
-
+            services.AddSingleton(_bulkOptions);
             return true;
-#endif
         }
 
         public virtual long GetServiceProviderHashCode()
         {
-            return BulkInsertEnabled.GetHashCode() ^ BulkDeleteEnabled.GetHashCode() ^ BulkUpdateEnabled.GetHashCode();
+            return _bulkOptions.GetHashCode() * 999;
         }
 
         public virtual void Validate(IDbContextOptions options)
         {
-        }
-
-        internal void ApplyOptions(SqlServerBulkOptions options)
-        {
-            BulkInsertEnabled = options.InsertEnabled;
-            BulkUpdateEnabled = options.UpdateEnabled;
-            BulkDeleteEnabled = options.DeleteEnabled;
         }
     }
 }

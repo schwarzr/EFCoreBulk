@@ -5,7 +5,7 @@
     <Authors>Raphael Schwarz</Authors>
     <Company>codeworx gmbh</Company>
     <Product>Bulk Extensions for EntityFrameworkCore</Product>
-    <Description>Extensions for EntityFramework Core to use SqlServers SqlBulkCopy in order to provide high performance Insert, Update and Delete mass operations.</Description>
+    <Description>Extensions for EntityFramework Core to use SqlServers SqlBulkCopy in order to provide high performance Insert and Delete mass operations.</Description>
     <Copyright>copyright © Raphael Schwarz 2019</Copyright>
     <PackageProjectUrl>https://github.com/schwarzr/EFCoreBulk</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
