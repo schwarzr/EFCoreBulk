@@ -35,8 +35,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         {
             var writeColumns = string.Join(" AND ", InboundColumns.Select(p => $"t.[{p.ColumnName}] = tmp.[{p.ColumnName}]"));
 
-            var commandText = $"DELETE t FROM {_targetTableName} t " +
-                              $"INNER JOIN {_bulkTable} tmp ON {writeColumns}";
+            var commandText = $"SET NOCOUNT ON;\r\n" +
+                              $"DELETE t FROM {_targetTableName} t \r\n" +
+                              $"INNER JOIN {_bulkTable} tmp ON {writeColumns};\r\n" +
+                              $"Select @@ROWCOUNT;";
 
             var command = connection.DbConnection.CreateCommand();
             command.CommandText = commandText;

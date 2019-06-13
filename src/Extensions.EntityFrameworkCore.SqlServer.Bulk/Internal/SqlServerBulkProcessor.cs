@@ -69,7 +69,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                         }
                         else
                         {
-                            result = commit.Target.ExecuteNonQuery();
+                            var scalar = commit.Target.ExecuteScalar();
+                            result = (int)scalar;
                         }
                     }
                     else
@@ -129,7 +130,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                         }
                         else
                         {
-                            result = await commit.Target.ExecuteNonQueryAsync(cancellation);
+                            var scalar = await commit.Target.ExecuteScalarAsync(cancellation);
+                            result = (int)scalar;
                         }
                     }
                     else
