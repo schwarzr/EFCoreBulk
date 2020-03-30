@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.202
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.EntityFrameworkCore.SqlServer.Bulk", "src\Extensions.EntityFrameworkCore.SqlServer.Bulk\Extensions.EntityFrameworkCore.SqlServer.Bulk.csproj", "{92CB63F3-7196-43D5-A5D4-63CED17B4D27}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{AC481355-4B91-47C8-AC76-2475282C8618}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk.Test", "test\Bulk.Test\Bulk.Test.csproj", "{70190CC3-F050-4789-A9BC-6EB3B62612C5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{92CB63F3-7196-43D5-A5D4-63CED17B4D27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92CB63F3-7196-43D5-A5D4-63CED17B4D27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92CB63F3-7196-43D5-A5D4-63CED17B4D27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92CB63F3-7196-43D5-A5D4-63CED17B4D27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70190CC3-F050-4789-A9BC-6EB3B62612C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70190CC3-F050-4789-A9BC-6EB3B62612C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70190CC3-F050-4789-A9BC-6EB3B62612C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70190CC3-F050-4789-A9BC-6EB3B62612C5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{70190CC3-F050-4789-A9BC-6EB3B62612C5} = {AC481355-4B91-47C8-AC76-2475282C8618}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A6757448-2705-45FA-883E-4212B890F65C}
+	EndGlobalSection
+EndGlobal

@@ -56,6 +56,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     if (item.ColumnName == name)
                     {
+                        if (item.UseOriginalValueParameter) {
+                            return item.OriginalValue;
+                        }
+
                         return item.Value;
                     }
                 }

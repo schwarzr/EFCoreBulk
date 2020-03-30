@@ -10,8 +10,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
     {
         private readonly SqlServerBulkOptions _bulkOptions;
 
-        public BulkModificationCommantBatchFactory(IRelationalCommandBuilderFactory commandBuilderFactory, ISqlGenerationHelper sqlGenerationHelper, ISqlServerUpdateSqlGenerator updateSqlGenerator, IRelationalValueBufferFactoryFactory valueBufferFactoryFactory, IDbContextOptions options, SqlServerBulkOptions bulkOptions)
-            : base(commandBuilderFactory, sqlGenerationHelper, updateSqlGenerator, valueBufferFactoryFactory, options)
+        public BulkModificationCommantBatchFactory(ModificationCommandBatchFactoryDependencies dependencies,
+            IDbContextOptions options,
+            SqlServerBulkOptions bulkOptions) 
+            : base(dependencies, options)
         {
             _bulkOptions = bulkOptions;
         }
