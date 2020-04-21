@@ -17,6 +17,8 @@ namespace Bulk.Test.Model
         [StringLength(100)]
         public string Title { get; set; }
 
+        public bool BoolFlag { get; set; }
+
         public object GetValue(string property)
         {
             if (_shadowValues.TryGetValue(property, out var value))

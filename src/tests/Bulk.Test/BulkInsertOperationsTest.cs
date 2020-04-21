@@ -72,6 +72,41 @@ namespace Bulk.Test
         }
 
         [Fact]
+        public async Task SaveChanges_InsertWithDefaultValuesAsync()
+        {
+            var prov = GetServiceProvider();
+            var ctx = prov.GetService<TestContext>();
+
+            for (int i = 1; i <= 100; i++)
+            {
+                var result = new SimpleTableWithShadowProperty
+                {
+                    Title = $"Title {i}"
+                };
+
+                await ctx.SimpleTableWithShadowProperty.AddAsync(result);
+                var entry = ctx.Entry(result);
+
+                if (i % 2 == 0)
+                {
+                    entry.Property("Description_de").CurrentValue = $"Description Value {i}";
+                    result.ModificationDate = DateTime.Now;
+                }
+            }
+
+            await ctx.SaveChangesAsync();
+
+            var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") == "Default").ToListAsync();
+            var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") != "Default").ToListAsync();
+            Assert.Equal(50, defaultItems.Count);
+            Assert.Equal(50, otherItems.Count);
+
+            Assert.All(otherItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
+            Assert.All(defaultItems, p => Assert.Equal(p.ModificationDate, DateTime.MinValue));
+            Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
+        }
+
+        [Fact]
         public async Task BulkInsertIdentityInsertTest()
         {
             var prov = GetServiceProvider();
