@@ -40,6 +40,8 @@ namespace Bulk.Test
             entity.Property(p => p.ModificationDate).HasDefaultValue(DateTime.MinValue);
             entity.Property(p => p.State).HasDefaultValue(State.Completed);
             entity.Property<string>("Description_en").HasMaxLength(200);
+
+            entity.Property(p => p.BoolFlag).HasDefaultValue(false);
         }
     }
 }
