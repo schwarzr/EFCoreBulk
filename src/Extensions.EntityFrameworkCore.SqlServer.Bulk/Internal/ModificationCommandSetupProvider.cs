@@ -72,12 +72,15 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     if (item.ColumnName == name)
                     {
-                        if (item.IsKey || item.IsWrite)
-                        {
+                        if (item.UseOriginalValueParameter) {
+                            return item.OriginalValue;
+                        }
+
+                        if (item.IsWrite) {
                             return item.Value;
                         }
 
-                        return item.Property.Relational().DefaultValue;
+                        return item.Property.GetDefaultValue();
                     }
                 }
             }

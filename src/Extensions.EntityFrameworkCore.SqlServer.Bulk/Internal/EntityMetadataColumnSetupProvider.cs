@@ -18,14 +18,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         public EntityMetadataColumnSetupProvider(IEntityType entity, EntityState state, BulkOptions bulkOptions)
         {
             _bulkOptions = bulkOptions;
-            var relational = entity.Relational();
-            if (relational == null)
-            {
-                throw new NotSupportedException($"The Entity {entity} does not have a relational mapping.");
-            }
 
-            SchemaName = relational.Schema;
-            TableName = relational.TableName;
+            SchemaName = entity.GetSchema();
+            TableName = entity.GetTableName();
 
             var properties = entity.GetProperties();
 
@@ -36,7 +31,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
             if (_bulkOptions.ShadowPropertyAccessor == null)
             {
-                properties = properties.Where(p => entity.Relational().DiscriminatorProperty == p || !p.IsShadowProperty);
+                properties = properties.Where(p => entity.GetDiscriminatorProperty() == p || !p.IsShadowProperty());
             }
 
             var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, state, _bulkOptions)).Where(p => p.ValueDirection != ValueDirection.None);
@@ -66,7 +61,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             }
         }
 
-#if(NETSTANDARD2_0)
         private static ValueDirection GetValudDirection(IProperty property, PropertySaveBehavior saveBehavior, ValueGenerated generatorFlag)
         {
             if (saveBehavior != PropertySaveBehavior.Save || (property.IsPrimaryKey() && property.ValueGenerated.HasFlag(generatorFlag)))
@@ -84,32 +78,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 return result;
             }
         }
-#else
-
-        private static ValueDirection GetValudDirection(IProperty property, ValueGenerated generatorFlag)
-        {
-            if (property.IsStoreGeneratedAlways || (property.IsPrimaryKey() && property.ValueGenerated == generatorFlag))
-            {
-                return ValueDirection.Read;
-            }
-            else
-            {
-                var result = ValueDirection.Write;
-                if (property.ValueGenerated == generatorFlag)
-                {
-                    result = result | ValueDirection.Read;
-                }
-
-                return result;
-            }
-        }
-
-#endif
 
         private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, EntityState state, BulkOptions bulkOptions)
         {
-            var relational = entity.Relational();
-
             var direction = GetValueDirection(property, state);
 
             if (property.IsPrimaryKey() && _bulkOptions.IdentityInsert)
@@ -122,16 +93,16 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 direction = direction & ~ValueDirection.Read;
             }
 
-            if (relational.DiscriminatorProperty == property)
+            if (entity.GetDiscriminatorProperty() == property)
             {
-                var discriminatorValue = relational.DiscriminatorValue;
-                return new DelegateColumnSetup(index, property.Relational().ColumnName, property.ClrType, p => discriminatorValue, (p, q) => { }, ValueDirection.Write);
+                var discriminatorValue = entity.GetDiscriminatorValue();
+                return new DelegateColumnSetup(index, property.GetColumnName(), property.ClrType, p => discriminatorValue, (p, q) => { }, ValueDirection.Write);
             }
 
             Expression<Func<object, object>> getValue = null;
             Expression<Action<object, object>> setValue = null;
 
-            if (property.IsShadowProperty)
+            if (property.IsShadowProperty())
             {
                 var accessorType = typeof(IShadowPropertyAccessor);
 
@@ -179,45 +150,30 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(getValueBody, typeof(object)), param);
                 setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), Expression.Convert(param2, property.ClrType)), param, param2);
             }
-            return new DelegateColumnSetup(index, property.Relational().ColumnName, property.ClrType, getValue.Compile(), setValue.Compile(), direction);
+            return new DelegateColumnSetup(index, property.GetColumnName(), property.ClrType, getValue.Compile(), setValue.Compile(), direction);
         }
 
         private ValueDirection GetValueDirection(IProperty property, EntityState state)
         {
-#if (NETSTANDARD2_0)
             if (state == EntityState.Added)
             {
-                return GetValudDirection(property, property.BeforeSaveBehavior, ValueGenerated.OnAdd);
+                return GetValudDirection(property, property.GetBeforeSaveBehavior(), ValueGenerated.OnAdd);
             }
             else if (state == EntityState.Modified)
             {
-                return GetValudDirection(property, property.AfterSaveBehavior, ValueGenerated.OnUpdate);
+                return GetValudDirection(property, property.GetAfterSaveBehavior(), ValueGenerated.OnUpdate);
             }
             else if (state == EntityState.Deleted)
             {
                 return property.IsPrimaryKey() ? ValueDirection.Write : ValueDirection.None;
             }
-#else
-            if (state == EntityState.Added)
-            {
-                return GetValudDirection(property, ValueGenerated.OnAdd);
-            }
-            else if (state == EntityState.Modified)
-            {
-                return GetValudDirection(property, ValueGenerated.OnAddOrUpdate);
-            }
-            else if (state == EntityState.Deleted)
-            {
-                return property.IsPrimaryKey() ? ValueDirection.Write : ValueDirection.None;
-            }
-#endif
             throw new NotSupportedException($"The entity state {state} can not be processed!");
         }
 
         private Expression ProcessDefaultValue(Expression getValueBody, IProperty property)
         {
             Expression defaultValueExpression = null;
-            var defaultValue = property.Relational().DefaultValue;
+            var defaultValue = property.GetDefaultValue();
             if (defaultValue != null)
             {
                 var type = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;

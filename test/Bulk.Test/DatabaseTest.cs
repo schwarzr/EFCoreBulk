@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using Bulk.Test.Model;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Bulk.Test
 {

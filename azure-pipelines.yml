@@ -26,9 +26,7 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: 'test'
-    projects: './src/tests/Bulk.Test/Bulk.Test.csproj'
-    feedsToUse: 'select'
-    versioningScheme: 'off'
+    projects: '**/*.test.csproj'
 - task: PowerShell@2
   env:
     BUILD_PRERELEASE: '$(Build.Prerelease)'
