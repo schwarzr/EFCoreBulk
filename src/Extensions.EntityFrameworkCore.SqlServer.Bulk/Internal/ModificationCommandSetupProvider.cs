@@ -15,19 +15,27 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         {
             var columns = new ConcurrentDictionary<string, IColumnSetup>();
 
-            foreach (var command in commands)
+            var grouped = from c in commands
+                          from m in c.ColumnModifications
+                          group new { m, c } by m.ColumnName into grp
+                          select new
+                          {
+                              ColumnName = grp.Key,
+                              ColumnModifications = grp.Select(p => p.m).ToList(),
+                              Commands = grp.Select(p => p.c).ToList()
+                          };
+
+
+            foreach (var column in grouped)
             {
                 if (TableName == null)
                 {
-                    TableName = command.TableName;
-                    SchemaName = command.Schema;
+                    TableName = column.Commands.First().TableName;
+                    SchemaName = column.Commands.First().Schema;
                 }
 
-                foreach (var modification in command.ColumnModifications)
-                {
-                    var name = modification.ColumnName;
-                    columns.GetOrAdd(name, p => new DelegateColumnSetup(columns.Count, p, modification.Property.ClrType, x => GetColumnValue(x, name), (x, y) => { }, GetDirection(modification)));
-                }
+                var name = column.ColumnName;
+                columns.GetOrAdd(name, p => new DelegateColumnSetup(columns.Count, p, column.ColumnModifications.First().Property.ClrType, x => GetColumnValue(x, p), (x, y) => { }, GetDirection(column.ColumnModifications)));
             }
 
             _columns = columns.Values.ToImmutableList();
@@ -44,7 +52,15 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public void PropagateValues(object entity, IDictionary<IColumnSetup, object> values)
         {
-            ((ModificationCommand)entity).PropagateResults(new ValueBuffer(values.OrderBy(p => p.Key.Ordinal).Select(p => p.Value).ToArray()));
+            var command = ((ModificationCommand)entity);
+
+            var buffer = from m in command.ColumnModifications
+                         join c in values on m.ColumnName equals c.Key.ColumnName
+                         where m.IsRead
+                         select c.Value;
+
+
+            command.PropagateResults(new ValueBuffer(buffer.ToArray()));
         }
 
         private static object GetColumnValue(object parma, string name)
@@ -68,20 +84,23 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             return null;
         }
 
-        private static ValueDirection GetDirection(ColumnModification modification)
+        private static ValueDirection GetDirection(IEnumerable<ColumnModification> modifications)
         {
             var direction = ValueDirection.None;
+            var modification = modifications.First();
+
             if (modification.Entry.EntityState == EntityState.Deleted && modification.IsKey)
             {
                 direction = ValueDirection.Write;
             }
             else
             {
-                if (modification.IsWrite)
+                if (modifications.Any(p => p.IsWrite))
                 {
                     direction = direction | ValueDirection.Write;
                 }
-                if (modification.IsRead)
+
+                if (modifications.Any(p => p.IsRead))
                 {
                     direction = direction | ValueDirection.Read;
                 }
