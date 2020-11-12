@@ -76,7 +76,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                             return item.OriginalValue;
                         }
 
-                        return item.Value;
+                        if (item.IsWrite) {
+                            return item.Value;
+                        }
+
+                        return item.Property.GetDefaultValue();
                     }
                 }
             }
