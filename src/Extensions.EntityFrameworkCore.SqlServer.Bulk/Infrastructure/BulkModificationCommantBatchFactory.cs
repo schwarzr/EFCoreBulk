@@ -9,18 +9,21 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
     public class BulkModificationCommantBatchFactory : SqlServerModificationCommandBatchFactory
     {
         private readonly SqlServerBulkOptions _bulkOptions;
+        private readonly SqlServerBulkConfiguration _sqlServerBulkConfiguration;
 
         public BulkModificationCommantBatchFactory(ModificationCommandBatchFactoryDependencies dependencies,
             IDbContextOptions options,
-            SqlServerBulkOptions bulkOptions) 
+            SqlServerBulkOptions bulkOptions,
+            SqlServerBulkConfiguration sqlServerBulkConfiguration)
             : base(dependencies, options)
         {
             _bulkOptions = bulkOptions;
+            _sqlServerBulkConfiguration = sqlServerBulkConfiguration;
         }
 
         public override ModificationCommandBatch Create()
         {
-            return new SqlServerBulkModificationCommandBatch(base.Create(), _bulkOptions);
+            return new SqlServerBulkModificationCommandBatch(base.Create(), _bulkOptions, _sqlServerBulkConfiguration);
         }
     }
 }

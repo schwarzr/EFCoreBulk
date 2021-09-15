@@ -14,23 +14,31 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
     {
         private bool _bulkMode;
         private SqlServerBulkOptions _bulkOptions;
+        private readonly SqlServerBulkConfiguration _sqlServerBulkConfiguration;
         private ImmutableList<ModificationCommand> _commands;
         private ModificationCommandBatch _modificationCommandBatch;
         private string _schema;
         private EntityState? _state;
         private string _table;
 
-        public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions)
+        public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions, SqlServerBulkConfiguration _sqlServerBulkConfiguration)
         {
             this._modificationCommandBatch = modificationCommandBatch;
             _commands = ImmutableList.Create<ModificationCommand>();
             _bulkOptions = bulkOptions;
+            this._sqlServerBulkConfiguration = _sqlServerBulkConfiguration;
         }
 
         public override IReadOnlyList<ModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
 
         public override bool AddCommand(ModificationCommand modificationCommand)
         {
+            if (_sqlServerBulkConfiguration.Disabled)
+            {
+                _bulkMode = false;
+                return _modificationCommandBatch.AddCommand(modificationCommand);
+            }
+
             var state = modificationCommand.EntityState;
             var bulkMode = false;
 
