@@ -24,6 +24,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
         {
             services.AddScoped<IModificationCommandBatchFactory, BulkModificationCommantBatchFactory>();
             services.AddSingleton(_bulkOptions);
+            services.AddScoped<SqlServerBulkConfiguration>(sp => new SqlServerBulkConfiguration { Disabled = sp.GetRequiredService<SqlServerBulkOptions>().DisableByDefault });
         }
 
         public virtual void Validate(IDbContextOptions options)

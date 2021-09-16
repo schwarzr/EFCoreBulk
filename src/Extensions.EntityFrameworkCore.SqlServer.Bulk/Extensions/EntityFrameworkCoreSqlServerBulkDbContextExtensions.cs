@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
+using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.EntityFrameworkCore
 {
@@ -35,6 +37,31 @@ namespace Microsoft.EntityFrameworkCore
                 await processor.ProcessAsync(relationalConnection, items, token);
                 transaction.Target?.Commit();
             }
+        }
+
+        public static void EnableBulk(this DbContext context)
+        {
+            var config = GetConfig(context);
+
+            config.Disabled = false;
+        }
+
+        public static void DisableBulk(this DbContext context)
+        {
+            var config = GetConfig(context);
+
+            config.Disabled = true;
+        }
+
+        private static SqlServerBulkConfiguration GetConfig(DbContext context)
+        {
+            var config = ((IInfrastructure<IServiceProvider>)context).Instance.GetService<SqlServerBulkConfiguration>();
+            if (config == null)
+            {
+                throw new NotSupportedException("Bulk extensions are not eanbled on this instance of DbContext");
+            }
+
+            return config;
         }
 
         public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, Action<BulkOptionsBuilder> bulkOptions = null, CancellationToken token = default(CancellationToken))
