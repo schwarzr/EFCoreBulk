@@ -440,5 +440,30 @@ namespace Bulk.Test
             var items = Enumerable.Range(0, 100000).Select(p => new SimpleTableWithIdentity { Title = $"Bla{p}" });
             await ctx.BulkInsertAsync(items, p => p.PropagateValues(false));
         }
+
+        [Fact]
+        public async Task BulkInsertUriWithStringConverter()
+        {
+            var provider = GetServiceProvider();
+            var context = provider.GetService<TestContext>();
+
+            Func<int, SimpleTableWithUri> mapStringToEntity =
+                x => new SimpleTableWithUri
+                {
+                    Id = x,
+                    Uri = new Uri($"https://loclahost:8080/test-uri{x}")
+                };
+
+            var entities = Enumerable.Range(0, 10)
+                .Select(mapStringToEntity);
+
+            await context.BulkInsertAsync(entities);
+
+            var items = await context.SimpleTableWithUri
+                .ToListAsync();
+
+            Assert.Equal(10, items.Count);
+        }
+
     }
 }

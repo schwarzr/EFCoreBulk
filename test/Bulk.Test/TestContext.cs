@@ -20,6 +20,8 @@ namespace Bulk.Test
 
         public DbSet<SimpleTableWithShadowProperty> SimpleTableWithShadowProperty { get; set; }
 
+        public DbSet<SimpleTableWithUri> SimpleTableWithUri { get; set; }
+
         public override void Dispose()
         {
             base.Dispose();
@@ -42,6 +44,13 @@ namespace Bulk.Test
             entity.Property<string>("Description_en").HasMaxLength(200);
 
             entity.Property(p => p.BoolFlag).HasDefaultValue(false);
+
+
+            modelBuilder.Entity<SimpleTableWithUri>()
+                .Property(p => p.Uri)
+                .HasConversion(
+                    v => v.ToString(),
+                    v => new Uri(v));
         }
     }
 }
