@@ -15,7 +15,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
         private bool _bulkMode;
         private SqlServerBulkOptions _bulkOptions;
         private readonly SqlServerBulkConfiguration _sqlServerBulkConfiguration;
-        private ImmutableList<ModificationCommand> _commands;
+        private ImmutableList<IReadOnlyModificationCommand> _commands;
         private ModificationCommandBatch _modificationCommandBatch;
         private string _schema;
         private EntityState? _state;
@@ -24,14 +24,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
         public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions, SqlServerBulkConfiguration _sqlServerBulkConfiguration)
         {
             this._modificationCommandBatch = modificationCommandBatch;
-            _commands = ImmutableList.Create<ModificationCommand>();
+            _commands = ImmutableList.Create<IReadOnlyModificationCommand>();
             _bulkOptions = bulkOptions;
             this._sqlServerBulkConfiguration = _sqlServerBulkConfiguration;
         }
 
-        public override IReadOnlyList<ModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
+        public override IReadOnlyList<IReadOnlyModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
 
-        public override bool AddCommand(ModificationCommand modificationCommand)
+        public override bool AddCommand(IReadOnlyModificationCommand modificationCommand)
         {
             if (_sqlServerBulkConfiguration.Disabled)
             {
@@ -122,15 +122,15 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
                 entries);
         }
 
-        private IBulkProcessor<ModificationCommand> GetBulkProcessor()
+        private IBulkProcessor<IReadOnlyModificationCommand> GetBulkProcessor()
         {
             switch (_state)
             {
                 case EntityState.Deleted:
-                    return new DeleteBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Deleted));
+                    return new DeleteBulkProcessor<IReadOnlyModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Deleted));
 
                 case EntityState.Added:
-                    return new InsertBulkProcessor<ModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Added));
+                    return new InsertBulkProcessor<IReadOnlyModificationCommand>(new ModificationCommandSetupProvider(_commands), BulkOptions.DefaultBulkOptions(EntityState.Added));
             }
 
             return null;
