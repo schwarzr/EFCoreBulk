@@ -45,7 +45,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
 
             public override string LogFragment => "SqlServerBulk";
 
-            public override long GetServiceProviderHashCode()
+            public override int GetServiceProviderHashCode()
             {
                 return _extension.BulkOptions.GetHashCode() * 999;
             }
@@ -53,6 +53,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
             {
                 debugInfo.Add("SqlServerBulkExtensions", _extension.BulkOptions.ToString());
+            }
+
+            public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
+            {
+                return true;
             }
         }
     }

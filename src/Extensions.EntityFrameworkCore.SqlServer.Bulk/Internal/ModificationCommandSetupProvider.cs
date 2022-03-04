@@ -11,7 +11,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
     {
         private readonly ImmutableList<IColumnSetup> _columns;
 
-        public ModificationCommandSetupProvider(IEnumerable<ModificationCommand> commands)
+        public ModificationCommandSetupProvider(IEnumerable<IReadOnlyModificationCommand> commands)
         {
             var columns = new ConcurrentDictionary<string, IColumnSetup>();
 
@@ -88,7 +88,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             return null;
         }
 
-        private static ValueDirection GetDirection(IEnumerable<ColumnModification> modifications)
+        private static ValueDirection GetDirection(IEnumerable<IColumnModification> modifications)
         {
             var direction = ValueDirection.None;
             var modification = modifications.First();
