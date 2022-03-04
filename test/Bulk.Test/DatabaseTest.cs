@@ -4,13 +4,14 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
 
 namespace Bulk.Test
 {
-    public class DatabaseTest : IDisposable
+    public class DatabaseTest
     {
-        private readonly string _databaseName;
-        private readonly IServiceProvider _nonBulkServiceProvider;
+        private string _databaseName;
+        private IServiceProvider _nonBulkServiceProvider;
 
         private ConcurrentBag<IServiceProvider> _bulkServiceProviders = new ConcurrentBag<IServiceProvider>();
         private ConcurrentBag<IServiceScope> _bulkServiceScopes = new ConcurrentBag<IServiceScope>();
@@ -18,6 +19,12 @@ namespace Bulk.Test
         private bool disposedValue = false;
 
         public DatabaseTest()
+        {
+
+        }
+
+        [SetUp]
+        public void Setup()
         {
             _databaseName = Guid.NewGuid().ToString("N");
             using (var connection = new SqlConnection($"Data Source=(localdb)\\mssqllocaldb;Initial Catalog=master;Integrated Security=True;"))
@@ -39,38 +46,26 @@ namespace Bulk.Test
             }
         }
 
-        public void Dispose()
+        [TearDown]
+        protected virtual void TearDown()
         {
-            Dispose(true);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
+            foreach (var item in _bulkServiceScopes)
             {
-                if (disposing)
-                {
-                    foreach (var item in _bulkServiceScopes)
-                    {
-                        item.Dispose();
-                    }
+                item.Dispose();
+            }
 
-                    foreach (var item in _bulkServiceProviders)
-                    {
-                        ((IDisposable)item).Dispose();
-                    }
+            foreach (var item in _bulkServiceProviders)
+            {
+                ((IDisposable)item).Dispose();
+            }
 
-                    using (var scope = _nonBulkServiceProvider.CreateScope())
-                    {
-                        var ctx = scope.ServiceProvider.GetService<TestContext>();
-                        ctx.Database.EnsureDeleted();
-                    }
+            using (var scope = _nonBulkServiceProvider.CreateScope())
+            {
+                var ctx = scope.ServiceProvider.GetService<TestContext>();
+                ctx.Database.EnsureDeleted();
+            }
 
                     ((IDisposable)_nonBulkServiceProvider).Dispose();
-                }
-
-                disposedValue = true;
-            }
         }
 
         protected IServiceProvider GetNonBulkServiceProvider()

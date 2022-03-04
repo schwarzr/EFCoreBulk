@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 using Bulk.Test.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
+using NUnit.Framework;
 
 namespace Bulk.Test
 {
     public class BulkDeleteOperationsTest : DatabaseTest
     {
-        [Fact]
+        [Test]
         public async Task BulkDeleteNormalInsertAndUpdateWithSaveChangesAsync()
         {
             var prov = GetServiceProvider(p => p.EnableBulkDelete().EnableBulkInsert(false));
@@ -28,7 +28,7 @@ namespace Bulk.Test
             await ctx.BulkInsertAsync(items);
 
             await ctx.SimpleTableWithShadowProperty.AddRangeAsync(items.Take(10));
-            Assert.Equal(10, ctx.ChangeTracker.Entries().Count());
+            Assert.AreEqual(10, ctx.ChangeTracker.Entries().Count());
             ctx.ChangeTracker.Entries().ToList().ForEach(p => p.State = EntityState.Deleted);
 
             ctx.Entry(updateItem).State = EntityState.Unchanged;
@@ -36,16 +36,16 @@ namespace Bulk.Test
             var newItem = new SimpleTableWithIdentity() { Title = "Normal Insert" };
             ctx.Add(newItem);
             updateItem.Title = "modified " + updateItem.Title;
-            Assert.Equal(EntityState.Modified, ctx.Entry(updateItem).State);
+            Assert.AreEqual(EntityState.Modified, ctx.Entry(updateItem).State);
 
             var result = await ctx.SaveChangesAsync();
-            Assert.Equal(12, result);
+            Assert.AreEqual(12, result);
 
             var dbItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
-            Assert.Single(dbItems);
+            Assert.AreEqual(1, dbItems.Count);
         }
 
-        [Fact]
+        [Test]
         public async Task BulkDeleteWithDbContextExtensionMethodAsync()
         {
             var prov = GetServiceProvider();
@@ -60,18 +60,24 @@ namespace Bulk.Test
 
             await ctx.BulkInsertAsync(items);
 
-            Assert.Equal(100, await ctx.SimpleTableWithShadowProperty.CountAsync());
+            Assert.AreEqual(100, await ctx.SimpleTableWithShadowProperty.CountAsync());
 
             await ctx.BulkDeleteAsync(items.Take(50));
 
             var dbItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
 
-            Assert.Equal(50, dbItems.Count);
+            Assert.AreEqual(50, dbItems.Count);
 
-            Assert.Equal(items.Skip(50), dbItems, new SimpleTablePrimaryKeyComparer());
+            var toCheck = items.Skip(50).ToList();
+            var comparer = new SimpleTablePrimaryKeyComparer();
+
+            for (int i = 0; i < dbItems.Count; i++)
+            {
+                Assert.True(comparer.Equals(toCheck[i], dbItems[i]));
+            }
         }
 
-        [Fact]
+        [Test]
         public async Task BulkDeleteWithErrorOnEmptyDeleteSaveChangesAsync()
         {
             var prov = GetServiceProvider();
@@ -89,13 +95,13 @@ namespace Bulk.Test
             items.Add(new SimpleTableWithShadowProperty { Id = 999, Title = "Title 999" });
 
             await ctx.SimpleTableWithShadowProperty.AddRangeAsync(items);
-            Assert.Equal(101, ctx.ChangeTracker.Entries().Count());
+            Assert.AreEqual(101, ctx.ChangeTracker.Entries().Count());
 
             ctx.ChangeTracker.Entries().ToList().ForEach(p => p.State = EntityState.Deleted);
-            await Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () => await ctx.SaveChangesAsync());
+            Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () => await ctx.SaveChangesAsync());
         }
 
-        [Fact]
+        [Test]
         public async Task BulkDeleteWithSaveChangesAsync()
         {
             var prov = GetServiceProvider();
@@ -111,14 +117,14 @@ namespace Bulk.Test
             await ctx.BulkInsertAsync(items);
 
             await ctx.SimpleTableWithShadowProperty.AddRangeAsync(items);
-            Assert.Equal(100, ctx.ChangeTracker.Entries().Count());
+            Assert.AreEqual(100, ctx.ChangeTracker.Entries().Count());
 
             ctx.ChangeTracker.Entries().ToList().ForEach(p => p.State = EntityState.Deleted);
             var result = await ctx.SaveChangesAsync();
-            Assert.Equal(100, result);
+            Assert.AreEqual(100, result);
 
             var dbItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
-            Assert.Empty(dbItems);
+            Assert.IsEmpty(dbItems);
         }
 
         private class SimpleTablePrimaryKeyComparer : IEqualityComparer<SimpleTableWithShadowProperty>

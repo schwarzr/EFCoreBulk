@@ -102,6 +102,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             Expression<Func<object, object>> getValue = null;
             Expression<Action<object, object>> setValue = null;
 
+            var valueConverter = property.GetValueConverter();
+
             if (property.IsShadowProperty())
             {
                 var accessorType = typeof(IShadowPropertyAccessor);
@@ -116,9 +118,17 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                         Expression.Constant(property.Name)),
                         property.ClrType);
 
+                Expression setValueBody = param2;
+
                 if (!bulkOptions.IgnoreDefaultValues)
                 {
                     getValueBody = ProcessDefaultValue(getValueBody, property);
+                }
+
+                if (valueConverter != null)
+                {
+                    getValueBody = valueConverter.ConvertToProviderExpression.Body.Replace(valueConverter.ConvertToProviderExpression.Parameters[0], getValueBody);
+                    setValueBody = Expression.Convert(valueConverter.ConvertFromProviderExpression.Body.Replace(valueConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(setValueBody, valueConverter.ProviderClrType)), typeof(object));
                 }
 
                 getValue = Expression.Lambda<Func<object, object>>(
@@ -129,7 +139,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                         Expression.Constant(bulkOptions.ShadowPropertyAccessor, accessorType),
                         accessorType.GetRuntimeMethod("StoreValue", new[] { typeof(object), typeof(string), typeof(object) }),
                         param,
-                        Expression.Constant(property.Name), param2),
+                        Expression.Constant(property.Name), setValueBody),
                     param,
                     param2);
             }
@@ -141,16 +151,31 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var cast = Expression.Convert(param, property.DeclaringEntityType.ClrType);
 
                 Expression getValueBody = Expression.Property(cast, property.PropertyInfo);
+                Expression setValueBody = Expression.Convert(param2, property.ClrType);
 
                 if (!bulkOptions.IgnoreDefaultValues)
                 {
                     getValueBody = ProcessDefaultValue(getValueBody, property);
                 }
 
+                if (valueConverter != null)
+                {
+                    getValueBody = valueConverter.ConvertToProviderExpression.Body.Replace(valueConverter.ConvertToProviderExpression.Parameters[0], getValueBody);
+                    setValueBody = valueConverter.ConvertFromProviderExpression.Body.Replace(valueConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(param2, valueConverter.ProviderClrType));
+                }
+
                 getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(getValueBody, typeof(object)), param);
-                setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), Expression.Convert(param2, property.ClrType)), param, param2);
+                setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), setValueBody), param, param2);
             }
-            return new DelegateColumnSetup(index, property.GetColumnName(), property.ClrType, getValue.Compile(), setValue.Compile(), direction);
+
+            var targetType = property.ClrType;
+
+            if (valueConverter != null)
+            {
+                targetType = valueConverter.ProviderClrType;
+            }
+
+            return new DelegateColumnSetup(index, property.GetColumnName(), targetType, getValue.Compile(), setValue.Compile(), direction);
         }
 
         private ValueDirection GetValueDirection(IProperty property, EntityState state)
