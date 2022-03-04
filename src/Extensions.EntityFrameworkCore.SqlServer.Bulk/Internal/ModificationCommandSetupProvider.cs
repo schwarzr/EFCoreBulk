@@ -76,7 +76,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                             return item.OriginalValue;
                         }
 
-                        if (item.IsWrite) {
+                        if (item.UseCurrentValueParameter) {
                             return item.Value;
                         }
 
