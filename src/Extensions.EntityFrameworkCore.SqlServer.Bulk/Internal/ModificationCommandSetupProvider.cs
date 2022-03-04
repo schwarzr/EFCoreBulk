@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
     {
         private readonly ImmutableList<IColumnSetup> _columns;
 
-        public ModificationCommandSetupProvider(IEnumerable<ModificationCommand> commands)
+        public ModificationCommandSetupProvider(IEnumerable<IReadOnlyModificationCommand> commands)
         {
             var columns = new ConcurrentDictionary<string, IColumnSetup>();
 
@@ -72,15 +73,26 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     if (item.ColumnName == name)
                     {
-                        if (item.UseOriginalValueParameter) {
-                            return item.OriginalValue;
+                        var converter = item.Property.GetValueConverter();
+
+                        Func<object, object> convert = p => p;
+
+                        if (converter != null)
+                        {
+                            convert = p => converter.ConvertToProvider(p);
                         }
 
-                        if (item.IsWrite) {
-                            return item.Value;
+                        if (item.UseOriginalValueParameter)
+                        {
+                            return convert(item.OriginalValue);
                         }
 
-                        return item.Property.GetDefaultValue();
+                        if (item.UseCurrentValueParameter)
+                        {
+                            return convert(item.Value);
+                        }
+
+                        return convert(item.Property.GetDefaultValue());
                     }
                 }
             }
@@ -88,7 +100,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             return null;
         }
 
-        private static ValueDirection GetDirection(IEnumerable<ColumnModification> modifications)
+        private static ValueDirection GetDirection(IEnumerable<IColumnModification> modifications)
         {
             var direction = ValueDirection.None;
             var modification = modifications.First();

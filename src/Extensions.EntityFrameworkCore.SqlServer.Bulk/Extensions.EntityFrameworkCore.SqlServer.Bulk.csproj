@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+	<TargetFramework>net6.0</TargetFramework>
     <Authors>Raphael Schwarz</Authors>
     <Company>codeworx gmbh</Company>
     <Product>Bulk Extensions for EntityFrameworkCore</Product>
     <Description>Extensions for EntityFramework Core to use SqlServers SqlBulkCopy in order to provide high performance Insert and Delete mass operations.</Description>
-    <Copyright>copyright © Raphael Schwarz 2019</Copyright>
+    <Copyright>copyright © Raphael Schwarz 2022</Copyright>
     <PackageProjectUrl>https://github.com/schwarzr/EFCoreBulk</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>ef Entity Framework Core bulk insert bulk-insert</PackageTags>
@@ -18,7 +18,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.0" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

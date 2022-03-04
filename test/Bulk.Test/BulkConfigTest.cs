@@ -10,13 +10,13 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
+using NUnit.Framework;
 
 namespace Bulk.Test
 {
     public class BulkConfigTest : DatabaseTest
     {
-        [Fact]
+        [Test]
         public async Task TestDisabledByDeafultAsync()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled());
@@ -30,7 +30,7 @@ namespace Bulk.Test
             }
         }
 
-        [Fact]
+        [Test]
         public async Task TestEnabledByDeafultAsync()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled(false));
@@ -44,7 +44,7 @@ namespace Bulk.Test
             }
         }
 
-        [Fact]
+        [Test]
         public async Task TestEnabledByDeafultNoconfigAsync()
         {
             var prov = GetServiceProvider();
@@ -59,7 +59,7 @@ namespace Bulk.Test
         }
 
 
-        [Fact]
+        [Test]
         public async Task TestDisableAndEnableMethod()
         {
             var prov = GetServiceProvider();
@@ -79,7 +79,7 @@ namespace Bulk.Test
             }
         }
 
-        [Fact]
+        [Test]
         public async Task TestEnableAndDisableMethod()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled(true));
@@ -99,7 +99,7 @@ namespace Bulk.Test
             }
         }
 
-        [Fact]
+        [Test]
         public async Task TestEnableAndDisableWithMultipleInstancesMethod()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled(true));

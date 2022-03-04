@@ -8,13 +8,13 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
+using NUnit.Framework;
 
 namespace Bulk.Test
 {
     public class BulkInsertOperationsTest : DatabaseTest
     {
-        [Fact]
+        [Test]
         public async Task BulkInsertCustomOptionsTest()
         {
             var prov = GetServiceProvider();
@@ -31,14 +31,14 @@ namespace Bulk.Test
 
                 var items = await ctx.SimpleTableWithIdentity.ToListAsync();
 
-                Assert.Equal(3, items.Count);
-                Assert.DoesNotContain(items, p => p.Id == 11);
-                Assert.DoesNotContain(items, p => p.Id == 12);
-                Assert.DoesNotContain(items, p => p.Id == 13);
+                Assert.AreEqual(3, items.Count);
+                Assert.False(items.Any(p => p.Id == 11));
+                Assert.False(items.Any(p => p.Id == 12));
+                Assert.False(items.Any(p => p.Id == 13));
             }
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertDefaultValuesForPropertiesAsync()
         {
             var prov = GetServiceProvider();
@@ -64,15 +64,15 @@ namespace Bulk.Test
 
             var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") == "Default").ToListAsync();
             var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") != "Default").ToListAsync();
-            Assert.Equal(50, defaultItems.Count);
-            Assert.Equal(50, otherItems.Count);
+            Assert.AreEqual(50, defaultItems.Count);
+            Assert.AreEqual(50, otherItems.Count);
 
-            Assert.All(otherItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
-            Assert.All(defaultItems, p => Assert.Equal(p.ModificationDate, DateTime.MinValue));
-            Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
+            otherItems.ForEach(p => ((string)ctx.Entry(p).Property("Description_de").CurrentValue).StartsWith("Description Value "));
+            defaultItems.ForEach(p => Assert.AreEqual(p.ModificationDate, DateTime.MinValue));
+            otherItems.ForEach(p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
         }
 
-        [Fact]
+        [Test]
         public async Task SaveChanges_InsertWithDefaultValuesAsync()
         {
             var prov = GetServiceProvider();
@@ -99,15 +99,15 @@ namespace Bulk.Test
 
             var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") == "Default").ToListAsync();
             var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => EF.Property<string>(p, "Description_de") != "Default").ToListAsync();
-            Assert.Equal(50, defaultItems.Count);
-            Assert.Equal(50, otherItems.Count);
+            Assert.AreEqual(50, defaultItems.Count);
+            Assert.AreEqual(50, otherItems.Count);
 
-            Assert.All(otherItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
-            Assert.All(defaultItems, p => Assert.Equal(p.ModificationDate, DateTime.MinValue));
-            Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
+            otherItems.ForEach(p => Assert.True(((string)ctx.Entry(p).Property("Description_de").CurrentValue).StartsWith("Description Value ")));
+            defaultItems.ForEach(p => Assert.AreEqual(p.ModificationDate, DateTime.MinValue));
+            otherItems.ForEach(p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertIdentityInsertTest()
         {
             var prov = GetServiceProvider();
@@ -123,14 +123,14 @@ namespace Bulk.Test
 
                 var items = await ctx.SimpleTableWithIdentity.ToListAsync();
 
-                Assert.Equal(3, items.Count);
-                Assert.Contains(items, p => p.Id == 11);
-                Assert.Contains(items, p => p.Id == 12);
-                Assert.Contains(items, p => p.Id == 13);
+                Assert.AreEqual(3, items.Count);
+                Assert.True(items.Any(p => p.Id == 11));
+                Assert.True(items.Any(p => p.Id == 12));
+                Assert.True(items.Any(p => p.Id == 13));
             }
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertNoDefaultValueHandlingAsync()
         {
             var prov = GetServiceProvider();
@@ -155,14 +155,14 @@ namespace Bulk.Test
 
             var defaultItems = await ctx.SimpleTableWithShadowProperty.Where(p => p.ModificationDate == null).ToListAsync();
             var otherItems = await ctx.SimpleTableWithShadowProperty.Where(p => p.ModificationDate != null).ToListAsync();
-            Assert.Equal(50, defaultItems.Count);
-            Assert.Equal(50, otherItems.Count);
+            Assert.AreEqual(50, defaultItems.Count);
+            Assert.AreEqual(50, otherItems.Count);
 
-            Assert.All(defaultItems, p => Assert.False(p.ModificationDate.HasValue));
-            Assert.All(otherItems, p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
+            defaultItems.ForEach(p => Assert.False(p.ModificationDate.HasValue));
+            otherItems.ForEach(p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertNormalUpdateAsync()
         {
             var prov = GetServiceProvider();
@@ -185,7 +185,7 @@ namespace Bulk.Test
             ctx.SimpleTableWithIdentity.Add(item3);
 
             var changes = ctx.ChangeTracker.Entries().Where(p => p.State == EntityState.Modified).ToList();
-            Assert.Single(changes);
+            Assert.AreEqual(1, changes.Count);
 
             await ctx.SaveChangesAsync();
 
@@ -193,17 +193,17 @@ namespace Bulk.Test
 
             var updated = await ctx.SimpleTableWithIdentity.FirstAsync(p => p.Id == oldItem.Id);
 
-            Assert.Equal("newTitle", updated.Title);
+            Assert.AreEqual("newTitle", updated.Title);
 
-            Assert.NotEqual(0, item1.Id);
-            Assert.NotEqual(0, item2.Id);
-            Assert.NotEqual(0, item3.Id);
-            Assert.NotEqual(item1.Id, item2.Id);
-            Assert.NotEqual(item2.Id, item3.Id);
-            Assert.NotEqual(item1.Id, item3.Id);
+            Assert.AreNotEqual(0, item1.Id);
+            Assert.AreNotEqual(0, item2.Id);
+            Assert.AreNotEqual(0, item3.Id);
+            Assert.AreNotEqual(item1.Id, item2.Id);
+            Assert.AreNotEqual(item2.Id, item3.Id);
+            Assert.AreNotEqual(item1.Id, item3.Id);
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertSetupTest()
         {
             var prov = GetServiceProvider();
@@ -221,12 +221,12 @@ namespace Bulk.Test
 
                 var items = await ctx.SimpleTableWithIdentity.ToListAsync();
 
-                Assert.Equal(3, items.Count);
+                Assert.AreEqual(3, items.Count);
                 Assert.True(wasCalled);
             }
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertShadowPropertyEntityIgnoreShadowPropertyAsync()
         {
             var prov = GetServiceProvider();
@@ -247,10 +247,10 @@ namespace Bulk.Test
             await ctx.BulkInsertAsync(items);
 
             var allItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
-            Assert.All(allItems, p => Assert.Equal("DEFAULT", ctx.Entry(p).Property("Description_de").CurrentValue));
+            allItems.ForEach(p => Assert.AreEqual("DEFAULT", ctx.Entry(p).Property("Description_de").CurrentValue));
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertShadowPropertyEntityIncludeShadowPropertyAsync()
         {
             var prov = GetServiceProvider();
@@ -271,10 +271,10 @@ namespace Bulk.Test
             await ctx.BulkInsertAsync(items, p => p.ShadowPropertyAccessor(ShadowPropertyAccessor.Current));
 
             var allItems = await ctx.SimpleTableWithShadowProperty.ToListAsync();
-            Assert.All(allItems, p => Assert.StartsWith("Description Value ", (string)ctx.Entry(p).Property("Description_de").CurrentValue));
+            allItems.ForEach(p => ((string)ctx.Entry(p).Property("Description_de").CurrentValue).StartsWith("Description Value "));
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertTpHEntitiesAsync()
         {
             var itemsOne = Enumerable.Range(0, 200).Select(p => new TpHChildTableOne
@@ -296,23 +296,23 @@ namespace Bulk.Test
             await context.BulkInsertAsync(itemsOne);
             await context.BulkInsertAsync(itemsTwo);
 
-            Assert.All(itemsOne, p => Assert.True(p.Id > 0));
-            Assert.All(itemsTwo, p => Assert.True(p.Id > 0));
+            itemsOne.ForEach(p => Assert.True(p.Id > 0));
+            itemsTwo.ForEach(p => Assert.True(p.Id > 0));
 
             var itemOne = context.BaseTphTable.First(p => p.Id == itemsOne.First().Id);
             var itemTwo = context.BaseTphTable.First(p => p.Id == itemsTwo.First().Id);
 
-            Assert.IsType<TpHChildTableOne>(itemOne);
-            Assert.IsType<TpHChildTableTwo>(itemTwo);
+            Assert.IsInstanceOf<TpHChildTableOne>(itemOne);
+            Assert.IsInstanceOf<TpHChildTableTwo>(itemTwo);
 
-            Assert.Equal("TpHBulkInsertTestOne", itemOne.Name);
-            Assert.Equal("TpHBulkInsertTestTwo", itemTwo.Name);
+            Assert.AreEqual("TpHBulkInsertTestOne", itemOne.Name);
+            Assert.AreEqual("TpHBulkInsertTestTwo", itemTwo.Name);
 
-            Assert.Equal(1, ((TpHChildTableOne)itemOne).ChildOneProperty);
-            Assert.Equal(2, ((TpHChildTableTwo)itemTwo).ChildTwoProperty);
+            Assert.AreEqual(1, ((TpHChildTableOne)itemOne).ChildOneProperty);
+            Assert.AreEqual(2, ((TpHChildTableTwo)itemTwo).ChildTwoProperty);
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertWithDbContextExtensionMethodWithoutValuePropagationAsync()
         {
             var prov = GetServiceProvider();
@@ -327,12 +327,12 @@ namespace Bulk.Test
 
             await ctx.BulkInsertAsync(items, p => p.PropagateValues(false));
 
-            Assert.Equal(0, items[0].Id);
-            Assert.Equal(0, items[1].Id);
-            Assert.Equal(0, items[2].Id);
+            Assert.AreEqual(0, items[0].Id);
+            Assert.AreEqual(0, items[1].Id);
+            Assert.AreEqual(0, items[2].Id);
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertWithDbContextExtensionMethodWithValuePropagationAsync()
         {
             var prov = GetServiceProvider();
@@ -346,12 +346,12 @@ namespace Bulk.Test
 
             await ctx.BulkInsertAsync(items);
 
-            Assert.NotEqual(0, items[0].Id);
-            Assert.NotEqual(0, items[1].Id);
-            Assert.NotEqual(0, items[2].Id);
+            Assert.AreNotEqual(0, items[0].Id);
+            Assert.AreNotEqual(0, items[1].Id);
+            Assert.AreNotEqual(0, items[2].Id);
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertWithSurroundingTransactionAsync()
         {
             var prov = GetServiceProvider();
@@ -379,16 +379,16 @@ namespace Bulk.Test
 
             var result = ctx.SimpleTableWithIdentity.ToList();
 
-            Assert.Equal(6, result.Count);
-            Assert.Contains(result, p => p.Title.Equals("Bla1"));
-            Assert.Contains(result, p => p.Title.Equals("Bla2"));
-            Assert.Contains(result, p => p.Title.Equals("Bla3"));
-            Assert.Contains(result, p => p.Title.Equals("Bla4"));
-            Assert.Contains(result, p => p.Title.Equals("Bla5"));
-            Assert.Contains(result, p => p.Title.Equals("Bla6"));
+            Assert.AreEqual(6, result.Count);
+            Assert.True(result.Any(p => p.Title.Equals("Bla1")));
+            Assert.True(result.Any(p => p.Title.Equals("Bla2")));
+            Assert.True(result.Any(p => p.Title.Equals("Bla3")));
+            Assert.True(result.Any(p => p.Title.Equals("Bla4")));
+            Assert.True(result.Any(p => p.Title.Equals("Bla5")));
+            Assert.True(result.Any(p => p.Title.Equals("Bla6")));
         }
 
-        [Fact]
+        [Test]
         public async Task SimpleInsertAsync()
         {
             var prov = GetServiceProvider();
@@ -405,16 +405,16 @@ namespace Bulk.Test
 
                 await ctx.SaveChangesAsync();
 
-                Assert.NotEqual(0, item1.Id);
-                Assert.NotEqual(0, item2.Id);
-                Assert.NotEqual(0, item3.Id);
-                Assert.NotEqual(item1.Id, item2.Id);
-                Assert.NotEqual(item2.Id, item3.Id);
-                Assert.NotEqual(item1.Id, item3.Id);
+                Assert.AreNotEqual(0, item1.Id);
+                Assert.AreNotEqual(0, item2.Id);
+                Assert.AreNotEqual(0, item3.Id);
+                Assert.AreNotEqual(item1.Id, item2.Id);
+                Assert.AreNotEqual(item2.Id, item3.Id);
+                Assert.AreNotEqual(item1.Id, item3.Id);
             }
         }
 
-        [Fact]
+        [Test]
         public async Task SimpleInsertMassAsync()
         {
             //var prov = GetNonBulkServiceProvider();
@@ -427,10 +427,10 @@ namespace Bulk.Test
 
             await ctx.SaveChangesAsync();
 
-            Assert.All(items, p => Assert.True(p.Id > 0));
+            items.ForEach(p => Assert.True(p.Id > 0));
         }
 
-        [Fact]
+        [Test]
         public async Task SimpleInsertMassWithDbContextExtensionAsync()
         {
             //var prov = GetNonBulkServiceProvider();
@@ -441,7 +441,7 @@ namespace Bulk.Test
             await ctx.BulkInsertAsync(items, p => p.PropagateValues(false));
         }
 
-        [Fact]
+        [Test]
         public async Task BulkInsertUriWithStringConverter()
         {
             var provider = GetServiceProvider();
@@ -462,7 +462,33 @@ namespace Bulk.Test
             var items = await context.SimpleTableWithUri
                 .ToListAsync();
 
-            Assert.Equal(10, items.Count);
+            Assert.AreEqual(10, items.Count);
+        }
+
+
+        [Test]
+        public async Task BulkInsertUriWithStringConverter_SaveChanges()
+        {
+            var provider = GetServiceProvider();
+            var context = provider.GetService<TestContext>();
+
+            Func<int, SimpleTableWithUri> mapStringToEntity =
+                x => new SimpleTableWithUri
+                {
+                    Uri = new Uri($"https://loclahost:8080/test-uri{x}")
+                };
+
+            var entities = Enumerable.Range(0, 10)
+                .Select(mapStringToEntity);
+
+            await context.AddRangeAsync(entities);
+
+            await context.SaveChangesAsync();
+
+            var items = await context.SimpleTableWithUri
+                .ToListAsync();
+
+            Assert.AreEqual(10, items.Count);
         }
 
     }
