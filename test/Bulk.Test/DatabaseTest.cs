@@ -16,8 +16,6 @@ namespace Bulk.Test
         private ConcurrentBag<IServiceProvider> _bulkServiceProviders = new ConcurrentBag<IServiceProvider>();
         private ConcurrentBag<IServiceScope> _bulkServiceScopes = new ConcurrentBag<IServiceScope>();
 
-        private bool disposedValue = false;
-
         public DatabaseTest()
         {
 
