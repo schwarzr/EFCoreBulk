@@ -31,7 +31,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
             if (_bulkOptions.ShadowPropertyAccessor == null)
             {
-                properties = properties.Where(p => entity.GetDiscriminatorProperty() == p || !p.IsShadowProperty());
+                properties = properties.Where(p => entity.FindDiscriminatorProperty() == p || !p.IsShadowProperty());
             }
 
             var columns = properties.Select((p, i) => CreateColumnSetup(entity, p, i, state, _bulkOptions)).Where(p => p.ValueDirection != ValueDirection.None);
@@ -81,6 +81,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         private IColumnSetup CreateColumnSetup(IEntityType entity, IProperty property, int index, EntityState state, BulkOptions bulkOptions)
         {
+            var storeIdentifier = StoreObjectIdentifier.Create(entity, StoreObjectType.Table);
+
             var direction = GetValueDirection(property, state);
 
             if (property.IsPrimaryKey() && _bulkOptions.IdentityInsert)
@@ -93,10 +95,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 direction = direction & ~ValueDirection.Read;
             }
 
-            if (entity.GetDiscriminatorProperty() == property)
+            if (entity.FindDiscriminatorProperty() == property)
             {
                 var discriminatorValue = entity.GetDiscriminatorValue();
-                return new DelegateColumnSetup(index, property.GetColumnName(), property.ClrType, p => discriminatorValue, (p, q) => { }, ValueDirection.Write);
+                return new DelegateColumnSetup(index, property.GetColumnName(storeIdentifier.Value), property.ClrType, p => discriminatorValue, (p, q) => { }, ValueDirection.Write);
             }
 
             Expression<Func<object, object>> getValue = null;
@@ -175,7 +177,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 targetType = valueConverter.ProviderClrType;
             }
 
-            return new DelegateColumnSetup(index, property.GetColumnName(), targetType, getValue.Compile(), setValue.Compile(), direction);
+            return new DelegateColumnSetup(index, property.GetColumnName(storeIdentifier.Value), targetType, getValue.Compile(), setValue.Compile(), direction);
         }
 
         private ValueDirection GetValueDirection(IProperty property, EntityState state)
