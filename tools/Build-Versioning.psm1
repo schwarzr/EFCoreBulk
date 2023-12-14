@@ -1,4 +1,3 @@
-Import-Module -Name "./Invoke-MsBuild.psm1"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -AssemblyName System.Xml.Linq
 

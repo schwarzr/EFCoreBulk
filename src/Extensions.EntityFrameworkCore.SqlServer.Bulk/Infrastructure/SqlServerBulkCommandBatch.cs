@@ -20,6 +20,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
         private string _schema;
         private EntityState? _state;
         private string _table;
+        private bool _areMoreBatchesExpected;
+
+        public override bool RequiresTransaction => _bulkMode ? true : _modificationCommandBatch.RequiresTransaction;
 
         public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions, SqlServerBulkConfiguration _sqlServerBulkConfiguration)
         {
@@ -29,14 +32,25 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             this._sqlServerBulkConfiguration = _sqlServerBulkConfiguration;
         }
 
+        public override bool AreMoreBatchesExpected => _areMoreBatchesExpected;
+
+        public override void Complete(bool moreBatchesExpected)
+        {
+            _areMoreBatchesExpected = moreBatchesExpected;
+            if (!_bulkMode)
+            {
+                _modificationCommandBatch.Complete(moreBatchesExpected);
+            }
+        }
+
         public override IReadOnlyList<IReadOnlyModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
 
-        public override bool AddCommand(IReadOnlyModificationCommand modificationCommand)
+        public override bool TryAddCommand(IReadOnlyModificationCommand modificationCommand)
         {
             if (_sqlServerBulkConfiguration.Disabled)
             {
                 _bulkMode = false;
-                return _modificationCommandBatch.AddCommand(modificationCommand);
+                return _modificationCommandBatch.TryAddCommand(modificationCommand);
             }
 
             var state = modificationCommand.EntityState;
@@ -64,7 +78,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
 
             if (!_bulkMode)
             {
-                return _modificationCommandBatch.AddCommand(modificationCommand);
+                return _modificationCommandBatch.TryAddCommand(modificationCommand);
             }
 
             if (_state != modificationCommand.EntityState || _table != modificationCommand.TableName || _schema != modificationCommand.Schema)
