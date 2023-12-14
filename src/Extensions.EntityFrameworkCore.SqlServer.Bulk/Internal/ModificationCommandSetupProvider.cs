@@ -58,10 +58,16 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             var buffer = from m in command.ColumnModifications
                          join c in values on m.ColumnName equals c.Key.ColumnName
                          where m.IsRead
-                         select c.Value;
+                         select new { Column = m, Value = c.Value };
 
+            foreach (var item in buffer)
+            {
+                item.Column.Value = item.Value;
+            }
 
-            command.PropagateResults(new ValueBuffer(buffer.ToArray()));
+            ////command.PropagateResults()
+
+            ////command.PropagateResults(new ValueBuffer(buffer.ToArray()));
         }
 
         private static object GetColumnValue(object parma, string name)
