@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -106,6 +108,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
             var valueConverter = property.GetValueConverter();
 
+            property.IsSpatial(out var spatialConverter);
+
             if (property.IsShadowProperty())
             {
                 var accessorType = typeof(IShadowPropertyAccessor);
@@ -131,6 +135,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     getValueBody = valueConverter.ConvertToProviderExpression.Body.Replace(valueConverter.ConvertToProviderExpression.Parameters[0], getValueBody);
                     setValueBody = Expression.Convert(valueConverter.ConvertFromProviderExpression.Body.Replace(valueConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(setValueBody, valueConverter.ProviderClrType)), typeof(object));
+                }
+
+                if (spatialConverter != null)
+                {
+                    getValueBody = Expression.Property(spatialConverter.ConvertToProviderExpression.Body.Replace(spatialConverter.ConvertToProviderExpression.Parameters[0], getValueBody), nameof(SqlBytes.Value));
+                    setValueBody = Expression.Convert(spatialConverter.ConvertFromProviderExpression.Body.Replace(spatialConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(setValueBody, spatialConverter.ProviderClrType)), typeof(object));
                 }
 
                 getValue = Expression.Lambda<Func<object, object>>(
@@ -165,6 +175,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                     getValueBody = valueConverter.ConvertToProviderExpression.Body.Replace(valueConverter.ConvertToProviderExpression.Parameters[0], getValueBody);
                     setValueBody = valueConverter.ConvertFromProviderExpression.Body.Replace(valueConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(param2, valueConverter.ProviderClrType));
                 }
+
+                if (spatialConverter != null)
+                {
+                    getValueBody = Expression.Property(spatialConverter.ConvertToProviderExpression.Body.Replace(spatialConverter.ConvertToProviderExpression.Parameters[0], getValueBody), nameof(SqlBytes.Value));
+                    setValueBody = spatialConverter.ConvertFromProviderExpression.Body.Replace(spatialConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(param2, spatialConverter.ProviderClrType));
+                }
+
 
                 getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(getValueBody, typeof(object)), param);
                 setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), setValueBody), param, param2);

@@ -1,22 +1,16 @@
 using System;
-using System.Collections.Concurrent;
-using System.Data.SqlClient;
-using System.Linq;
 using System.Threading.Tasks;
-using Bulk.Test.Model;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.SqlServer.Bulk;
 using Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
+using Xunit;
 
 namespace Bulk.Test
 {
     public class BulkConfigTest : DatabaseTest
     {
-        [Test]
+        [Fact]
         public async Task TestDisabledByDeafultAsync()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled());
@@ -30,7 +24,7 @@ namespace Bulk.Test
             }
         }
 
-        [Test]
+        [Fact]
         public async Task TestEnabledByDeafultAsync()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled(false));
@@ -44,7 +38,7 @@ namespace Bulk.Test
             }
         }
 
-        [Test]
+        [Fact]
         public async Task TestEnabledByDeafultNoconfigAsync()
         {
             var prov = GetServiceProvider();
@@ -59,7 +53,7 @@ namespace Bulk.Test
         }
 
 
-        [Test]
+        [Fact]
         public async Task TestDisableAndEnableMethod()
         {
             var prov = GetServiceProvider();
@@ -79,7 +73,7 @@ namespace Bulk.Test
             }
         }
 
-        [Test]
+        [Fact]
         public async Task TestEnableAndDisableMethod()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled(true));
@@ -99,7 +93,7 @@ namespace Bulk.Test
             }
         }
 
-        [Test]
+        [Fact]
         public async Task TestEnableAndDisableWithMultipleInstancesMethod()
         {
             var prov = GetServiceProvider(p => p.DefaultDisabled(true));

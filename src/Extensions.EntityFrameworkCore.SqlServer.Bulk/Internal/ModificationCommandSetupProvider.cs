@@ -2,14 +2,22 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data.Common;
+using System.Data.SqlTypes;
 using System.Linq;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.Identity.Client;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 {
     public class ModificationCommandSetupProvider : IColumnSetupProvider
     {
+        static ModificationCommandSetupProvider()
+        {
+        }
+
         private readonly ImmutableList<IColumnSetup> _columns;
 
         public ModificationCommandSetupProvider(IEnumerable<IReadOnlyModificationCommand> commands)
@@ -79,26 +87,36 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     if (item.ColumnName == name)
                     {
-                        var converter = item.Property.GetValueConverter();
-
                         Func<object, object> convert = p => p;
 
+                        var converter = item.Property.GetValueConverter();
                         if (converter != null)
                         {
                             convert = p => converter.ConvertToProvider(p);
                         }
 
+                        Func<object, object> final = convert;
+
+                        if (item.Property.IsSpatial(out var spatialConverter))
+                        {
+                            final = p =>
+                            {
+                                var result = spatialConverter.ConvertToProvider(convert(p));
+                                return result is SqlBytes bytes ? bytes.Value : result;
+                            };
+                        }
+
                         if (item.UseOriginalValueParameter)
                         {
-                            return convert(item.OriginalValue);
+                            return final(item.OriginalValue);
                         }
 
                         if (item.UseCurrentValueParameter)
                         {
-                            return convert(item.Value);
+                            return final(item.Value);
                         }
 
-                        return convert(item.Property.GetDefaultValue());
+                        return final(item.Property.GetDefaultValue());
                     }
                 }
             }

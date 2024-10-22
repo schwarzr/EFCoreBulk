@@ -6,7 +6,7 @@
     <Company>codeworx gmbh</Company>
     <Product>Bulk Extensions for EntityFrameworkCore</Product>
     <Description>Extensions for EntityFramework Core to use SqlServers SqlBulkCopy in order to provide high performance Insert and Delete mass operations.</Description>
-    <Copyright>copyright © Raphael Schwarz 2023</Copyright>
+    <Copyright>copyright © Raphael Schwarz 2024</Copyright>
     <PackageProjectUrl>https://github.com/schwarzr/EFCoreBulk</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>ef Entity Framework Core bulk insert bulk-insert</PackageTags>
