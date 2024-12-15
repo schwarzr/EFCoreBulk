@@ -4,41 +4,73 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-- master
-
 pool:
   vmImage: windows-2022
+
+variables:
+  major: 9
+  minor: 0
+  packageName: 'Extensions.EntityFrameworkCore.SqlServer.Bulk'
+  projects: 'src/Extensions.EntityFrameworkCore.SqlServer.Bulk'
+  testProjects: './test/Bulk.Test/Bulk.Test.csproj'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
 
 steps:
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
     script: 'sqllocaldb start mssqllocaldb'
+
+- task: DotNetCoreCLI@2
+  displayName: Run dotnet test
+  inputs:
+    command: 'test'
+    projects: '$(testProjects)'
+    feedsToUse: 'select'
+    versioningScheme: 'off'
+
+- task: DotNetCoreCLI@2
+  displayName: "Install package-version tool"
+  inputs:
+    command: 'custom'
+    custom: 'tool'
+    arguments: 'install Codeworx.PackageVersion -g'
+
+- task: DotNetCoreCLI@2
+  displayName: "Get next PackageVersion"
+  inputs:
+    command: 'custom'
+    custom: 'package-version'
+    arguments: '$(packageName) -m $(major) -n $(minor) -o DevOps -p $(prerelease)'
+
 - task: DownloadSecureFile@1
   inputs:
     secureFile: 'signkey.snk'
+
 - task: CopyFiles@2
   inputs:
     SourceFolder: '$(Agent.TempDirectory)'
     Contents: 'signkey.snk'
     TargetFolder: './private'
+
 - task: DotNetCoreCLI@2
+  displayName: "run dotnet pack"
   inputs:
-    command: 'test'
-    projects: '**/*.test.csproj'
-- task: PowerShell@2
-  env:
-    BUILD_PRERELEASE: '$(Build.Prerelease)'
+    command: 'pack'
+    packagesToPack: '$(projects)'
+    configuration: '$(buildConfiguration)'
+    versioningScheme: 'off'
+    buildProperties: 'Version=$(PackageVersion);FileVersion=$(PackageVersionFileVersion);AssemblyVersion=$(major).0.0.0;SignAssembly=true;AssemblyOriginatorKeyFile=..\..\private\signkey.snk'
+
+- task: Bash@3
+  displayName: "Update build version"
   inputs:
-    filePath: './tools/build.ps1'
-    workingDirectory: './tools'
-  displayName: 'Run the build script'
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: './dist/nuget'
-    Contents: '*'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    targetType: 'inline'
+    script: |
+      # Write your commands here
+      echo '##vso[build.updatebuildnumber]$(PackageVersion)'
+
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
