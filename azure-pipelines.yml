@@ -22,6 +22,12 @@ steps:
     targetType: 'inline'
     script: 'sqllocaldb start mssqllocaldb'
 
+- task: UseDotNet@2
+  displayName: install .net 10 sdk
+  inputs:
+    packageType: 'sdk'
+    version: '10.x'
+
 - task: DotNetCoreCLI@2
   displayName: Run dotnet test
   inputs:
