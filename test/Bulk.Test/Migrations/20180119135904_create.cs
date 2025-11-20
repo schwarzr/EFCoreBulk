@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 namespace Bulk.Test.Migrations
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "test solution")]
     public partial class create : Migration
     {
         protected override void Down(MigrationBuilder migrationBuilder)

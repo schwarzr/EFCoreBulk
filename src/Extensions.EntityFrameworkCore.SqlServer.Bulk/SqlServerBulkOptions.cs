@@ -24,7 +24,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk
             return this;
         }
 
-
         public SqlServerBulkOptions EnableBulkInsert(bool enabled = true)
         {
             InsertEnabled = enabled;
@@ -48,6 +47,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk
             {
                 return Equals(value);
             }
+
             return base.Equals(obj);
         }
 

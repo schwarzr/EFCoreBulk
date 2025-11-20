@@ -8,7 +8,7 @@ pool:
   vmImage: windows-2022
 
 variables:
-  major: 9
+  major: 10
   minor: 0
   packageName: 'Extensions.EntityFrameworkCore.SqlServer.Bulk'
   projects: 'src/Extensions.EntityFrameworkCore.SqlServer.Bulk'

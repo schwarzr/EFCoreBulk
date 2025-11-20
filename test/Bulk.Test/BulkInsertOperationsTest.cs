@@ -103,7 +103,9 @@ namespace Bulk.Test
             Assert.Equal(50, defaultItems.Count);
             Assert.Equal(50, otherItems.Count);
 
-            otherItems.ForEach(p => Assert.StartsWith("Description Value ", ((string)ctx.Entry(p).Property("Description_de").CurrentValue)));
+            otherItems.ForEach(p => Assert.StartsWith(
+                                    "Description Value ",
+                                    (string)ctx.Entry(p).Property("Description_de").CurrentValue));
             defaultItems.ForEach(p => Assert.Equal(p.ModificationDate, DateTime.MinValue));
             otherItems.ForEach(p => Assert.True(p.ModificationDate > DateTime.Now.AddHours(-1)));
         }

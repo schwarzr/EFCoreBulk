@@ -117,12 +117,13 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var param = Expression.Parameter(typeof(object), "p");
                 var param2 = Expression.Parameter(typeof(object), "q");
 
-                Expression getValueBody = Expression.Convert(Expression.Call(
+                Expression getValueBody = Expression.Convert(
+                    Expression.Call(
                         Expression.Constant(bulkOptions.ShadowPropertyAccessor, accessorType),
                         accessorType.GetRuntimeMethod("GetValue", new[] { typeof(object), typeof(string) }),
                         param,
                         Expression.Constant(property.Name)),
-                        property.ClrType);
+                    property.ClrType);
 
                 Expression setValueBody = param2;
 
@@ -151,7 +152,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                         Expression.Constant(bulkOptions.ShadowPropertyAccessor, accessorType),
                         accessorType.GetRuntimeMethod("StoreValue", new[] { typeof(object), typeof(string), typeof(object) }),
                         param,
-                        Expression.Constant(property.Name), setValueBody),
+                        Expression.Constant(property.Name),
+                        setValueBody),
                     param,
                     param2);
             }
@@ -160,7 +162,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var param = Expression.Parameter(typeof(object), "p");
                 var param2 = Expression.Parameter(typeof(object), "q");
 
-                var cast = Expression.Convert(param, property.DeclaringEntityType.ClrType);
+                var cast = Expression.Convert(param, property.DeclaringType.ClrType);
 
                 Expression getValueBody = Expression.Property(cast, property.PropertyInfo);
                 Expression setValueBody = Expression.Convert(param2, property.ClrType);
@@ -181,7 +183,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                     getValueBody = Expression.Property(spatialConverter.ConvertToProviderExpression.Body.Replace(spatialConverter.ConvertToProviderExpression.Parameters[0], getValueBody), nameof(SqlBytes.Value));
                     setValueBody = spatialConverter.ConvertFromProviderExpression.Body.Replace(spatialConverter.ConvertFromProviderExpression.Parameters[0], Expression.Convert(param2, spatialConverter.ProviderClrType));
                 }
-
 
                 getValue = Expression.Lambda<Func<object, object>>(Expression.Convert(getValueBody, typeof(object)), param);
                 setValue = Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Property(cast, property.PropertyInfo), setValueBody), param, param2);
@@ -211,6 +212,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             {
                 return property.IsPrimaryKey() ? ValueDirection.Write : ValueDirection.None;
             }
+
             throw new NotSupportedException($"The entity state {state} can not be processed!");
         }
 
@@ -225,6 +227,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     defaultValue = Enum.ToObject(type, defaultValue);
                 }
+
                 defaultValueExpression = Expression.Constant(defaultValue, property.ClrType);
             }
             else
@@ -244,6 +247,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                     defaultValueExpression,
                     getValueBody);
             }
+
             return getValueBody;
         }
     }

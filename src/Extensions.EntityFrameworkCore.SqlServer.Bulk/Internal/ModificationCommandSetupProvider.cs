@@ -14,11 +14,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 {
     public class ModificationCommandSetupProvider : IColumnSetupProvider
     {
+        private readonly ImmutableList<IColumnSetup> _columns;
+
         static ModificationCommandSetupProvider()
         {
         }
-
-        private readonly ImmutableList<IColumnSetup> _columns;
 
         public ModificationCommandSetupProvider(IEnumerable<IReadOnlyModificationCommand> commands)
         {
@@ -31,9 +31,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                           {
                               ColumnName = grp.Key,
                               ColumnModifications = grp.Select(p => p.m).ToList(),
-                              Commands = grp.Select(p => p.c).ToList()
+                              Commands = grp.Select(p => p.c).ToList(),
                           };
-
 
             foreach (var column in grouped)
             {
@@ -61,7 +60,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public void PropagateValues(object entity, IDictionary<IColumnSetup, object> values)
         {
-            var command = ((ModificationCommand)entity);
+            var command = (ModificationCommand)entity;
 
             var buffer = from m in command.ColumnModifications
                          join c in values on m.ColumnName equals c.Key.ColumnName

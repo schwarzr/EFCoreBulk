@@ -12,27 +12,29 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
 {
     public class SqlServerBulkModificationCommandBatch : ModificationCommandBatch
     {
+        private readonly SqlServerBulkConfiguration _sqlServerBulkConfiguration;
+        private bool _areMoreBatchesExpected;
         private bool _bulkMode;
         private SqlServerBulkOptions _bulkOptions;
-        private readonly SqlServerBulkConfiguration _sqlServerBulkConfiguration;
         private ImmutableList<IReadOnlyModificationCommand> _commands;
         private ModificationCommandBatch _modificationCommandBatch;
         private string _schema;
         private EntityState? _state;
         private string _table;
-        private bool _areMoreBatchesExpected;
 
-        public override bool RequiresTransaction => _bulkMode ? true : _modificationCommandBatch.RequiresTransaction;
-
-        public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions, SqlServerBulkConfiguration _sqlServerBulkConfiguration)
+        public SqlServerBulkModificationCommandBatch(ModificationCommandBatch modificationCommandBatch, SqlServerBulkOptions bulkOptions, SqlServerBulkConfiguration sqlServerBulkConfiguration)
         {
             this._modificationCommandBatch = modificationCommandBatch;
             _commands = ImmutableList.Create<IReadOnlyModificationCommand>();
             _bulkOptions = bulkOptions;
-            this._sqlServerBulkConfiguration = _sqlServerBulkConfiguration;
+            this._sqlServerBulkConfiguration = sqlServerBulkConfiguration;
         }
 
         public override bool AreMoreBatchesExpected => _areMoreBatchesExpected;
+
+        public override IReadOnlyList<IReadOnlyModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
+
+        public override bool RequiresTransaction => _bulkMode ? true : _modificationCommandBatch.RequiresTransaction;
 
         public override void Complete(bool moreBatchesExpected)
         {
@@ -43,7 +45,39 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             }
         }
 
-        public override IReadOnlyList<IReadOnlyModificationCommand> ModificationCommands => _bulkMode ? _commands : _modificationCommandBatch.ModificationCommands;
+        public override void Execute(IRelationalConnection connection)
+        {
+            if (_bulkMode)
+            {
+                var processor = GetBulkProcessor();
+                var result = processor.Process(connection, _commands);
+                if (result != _commands.Count)
+                {
+                    ThrowAggregateUpdateConcurrencyException(_commands.Count, result);
+                }
+            }
+            else
+            {
+                _modificationCommandBatch.Execute(connection);
+            }
+        }
+
+        public override async Task ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (_bulkMode)
+            {
+                var processor = GetBulkProcessor();
+                var result = await processor.ProcessAsync(connection, _commands, cancellationToken);
+                if (result != _commands.Count)
+                {
+                    ThrowAggregateUpdateConcurrencyException(_commands.Count, result);
+                }
+            }
+            else
+            {
+                await _modificationCommandBatch.ExecuteAsync(connection, cancellationToken);
+            }
+        }
 
         public override bool TryAddCommand(IReadOnlyModificationCommand modificationCommand)
         {
@@ -89,40 +123,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
             _commands = _commands.Add(modificationCommand);
 
             return true;
-        }
-
-        public override void Execute(IRelationalConnection connection)
-        {
-            if (_bulkMode)
-            {
-                var processor = GetBulkProcessor();
-                var result = processor.Process(connection, _commands);
-                if (result != _commands.Count)
-                {
-                    ThrowAggregateUpdateConcurrencyException(_commands.Count, result);
-                }
-            }
-            else
-            {
-                _modificationCommandBatch.Execute(connection);
-            }
-        }
-
-        public override async Task ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (_bulkMode)
-            {
-                var processor = GetBulkProcessor();
-                var result = await processor.ProcessAsync(connection, _commands, cancellationToken);
-                if (result != _commands.Count)
-                {
-                    ThrowAggregateUpdateConcurrencyException(_commands.Count, result);
-                }
-            }
-            else
-            {
-                await _modificationCommandBatch.ExecuteAsync(connection, cancellationToken);
-            }
         }
 
         protected virtual void ThrowAggregateUpdateConcurrencyException(

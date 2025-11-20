@@ -8,6 +8,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
         None = 0x00,
         Write = 0x01,
         Read = 0x02,
-        Both = Read | Write
+        Both = Read | Write,
     }
 }

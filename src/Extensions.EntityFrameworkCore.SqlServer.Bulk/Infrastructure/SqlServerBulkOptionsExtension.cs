@@ -17,7 +17,6 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Infrastructure
 
         public SqlServerBulkOptions BulkOptions => _bulkOptions;
 
-
         public DbContextOptionsExtensionInfo Info => new SqlServerBulkOptionsExtensionInfo(this);
 
         public void ApplyServices(IServiceCollection services)

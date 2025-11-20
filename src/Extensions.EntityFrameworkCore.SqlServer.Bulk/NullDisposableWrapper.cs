@@ -7,16 +7,14 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk
     public class NullDisposableWrapper<TTarget> : IDisposable
         where TTarget : IDisposable
     {
+        private bool _disposedValue = false;
+
         public NullDisposableWrapper(TTarget target)
         {
             Target = target;
         }
 
         public TTarget Target { get; }
-
-        #region IDisposable Support
-
-        private bool disposedValue = false; // To detect redundant calls
 
         public void Dispose()
         {
@@ -25,17 +23,15 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
                     Target?.Dispose();
                 }
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
-
-        #endregion IDisposable Support
     }
 }

@@ -30,6 +30,7 @@ namespace System.Linq.Expressions
                 {
                     return _replace;
                 }
+
                 return base.Visit(node);
             }
         }

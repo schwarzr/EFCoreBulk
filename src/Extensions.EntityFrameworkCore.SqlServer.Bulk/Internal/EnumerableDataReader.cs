@@ -44,7 +44,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
 
         public int Position { get; private set; }
 
-        public override int RecordsAffected => throw new NotImplementedException();
+        public override int RecordsAffected => throw new NotSupportedException();
 
         public ReadOnlyCollection<TItem> TrackedItems { get; }
 
@@ -164,6 +164,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
             {
                 values[item.Ordinal] = item.GetValue(_enumerator.Current);
             }
+
             return values.Length;
         }
 

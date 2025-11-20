@@ -159,7 +159,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 var commandText = $"DROP TABLE {tempTableName}";
 
                 var command = connection.DbConnection.CreateCommand();
+#pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
                 command.CommandText = commandText;
+#pragma warning restore CA2100 // Review SQL queries for security vulnerabilities
                 command.Transaction = connection.CurrentTransaction.GetDbTransaction();
                 command.CommandTimeout = connection.CommandTimeout ?? 60;
                 return (SqlCommand)command;
@@ -183,6 +185,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk.Internal
                 {
                     value = null;
                 }
+
                 values[OutboundColumns[i]] = value;
             }
         }

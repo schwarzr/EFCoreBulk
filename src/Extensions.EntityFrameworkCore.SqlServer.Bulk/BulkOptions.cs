@@ -33,6 +33,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Bulk
             {
                 return SqlBulkCopyOptions.CheckConstraints | SqlBulkCopyOptions.FireTriggers;
             }
+
             return SqlBulkCopyOptions.CheckConstraints | SqlBulkCopyOptions.FireTriggers | SqlBulkCopyOptions.KeepIdentity;
         }
 

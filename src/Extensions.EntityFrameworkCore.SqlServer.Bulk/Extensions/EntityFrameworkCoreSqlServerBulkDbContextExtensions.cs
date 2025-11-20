@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -39,31 +37,6 @@ namespace Microsoft.EntityFrameworkCore
             }
         }
 
-        public static void EnableBulk(this DbContext context)
-        {
-            var config = GetConfig(context);
-
-            config.Disabled = false;
-        }
-
-        public static void DisableBulk(this DbContext context)
-        {
-            var config = GetConfig(context);
-
-            config.Disabled = true;
-        }
-
-        private static SqlServerBulkConfiguration GetConfig(DbContext context)
-        {
-            var config = ((IInfrastructure<IServiceProvider>)context).Instance.GetService<SqlServerBulkConfiguration>();
-            if (config == null)
-            {
-                throw new NotSupportedException("Bulk extensions are not eanbled on this instance of DbContext");
-            }
-
-            return config;
-        }
-
         public static async Task BulkInsertAsync<TEntity>(this DbContext context, IEnumerable<TEntity> items, Action<BulkOptionsBuilder> bulkOptions = null, CancellationToken token = default(CancellationToken))
         {
             GetBulkInfrstructure<TEntity>(context, out var sp, out var entity, out var relationalConnection);
@@ -87,6 +60,20 @@ namespace Microsoft.EntityFrameworkCore
             }
         }
 
+        public static void DisableBulk(this DbContext context)
+        {
+            var config = GetConfig(context);
+
+            config.Disabled = true;
+        }
+
+        public static void EnableBulk(this DbContext context)
+        {
+            var config = GetConfig(context);
+
+            config.Disabled = false;
+        }
+
         private static void GetBulkInfrstructure<TEntity>(DbContext context, out IInfrastructure<IServiceProvider> sp, out IEntityType entity, out IRelationalConnection relationalConnection)
         {
             sp = (IInfrastructure<IServiceProvider>)context;
@@ -99,6 +86,17 @@ namespace Microsoft.EntityFrameworkCore
             }
 
             relationalConnection = sp.GetService<IRelationalConnection>();
+        }
+
+        private static SqlServerBulkConfiguration GetConfig(DbContext context)
+        {
+            var config = ((IInfrastructure<IServiceProvider>)context).Instance.GetService<SqlServerBulkConfiguration>();
+            if (config == null)
+            {
+                throw new NotSupportedException("Bulk extensions are not eanbled on this instance of DbContext");
+            }
+
+            return config;
         }
     }
 }

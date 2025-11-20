@@ -1,0 +1,31 @@
+<Project>
+    <PropertyGroup>
+        <Authors>Raphael Schwarz</Authors>
+		<Company>codeworx gmbh</Company>
+		<Product>Bulk Extensions for EntityFrameworkCore</Product>
+		<Description>Extensions for EntityFramework Core to use SqlServers SqlBulkCopy in order to provide high performance Insert and Delete mass operations.</Description>
+		<Copyright>copyright © Raphael Schwarz 2024</Copyright>
+		<PackageProjectUrl>https://github.com/schwarzr/EFCoreBulk</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="..\..\global\stylecop.json" Link="stylecop.json" />
+        <PackageReference Include="StyleCop.Analyzers">
+            <PrivateAssets>All</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CodeAnalysisRuleSet>..\..\global\StyleCop.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
+
+</Project>
